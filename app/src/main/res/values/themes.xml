@@ -1,0 +1,15 @@
+<resources>
+    <style name="Theme.Connect" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- Mirrors Meetup's own launch flow: Theme.SplashScreen with the launcher
+         icon shown on the app's neutral background, handing off to the main
+         theme once the first frame is ready. -->
+    <style name="Theme.Connect.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Connect</item>
+    </style>
+</resources>

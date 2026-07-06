@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# IDE
+.idea/
+*.iml
+.kotlin/
+
+# Android
+app/build/
+app/release/
+
+# Node
+node_modules/
+backend/.env
+functions/node_modules/
+admin-web/.vite/
+
+# Firebase
+firebase/serviceAccountKey.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Misc
+*.log
+.DS_Store
