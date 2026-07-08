@@ -96,7 +96,7 @@ data class ConnectionRequestDto(val senderId: String, val receiverId: String)
 @kotlinx.serialization.Serializable
 data class SendMessageRequest(val senderId: String, val text: String)
 @kotlinx.serialization.Serializable
-data class UpdateProfileRequest(val username: String, val email: String, val name: String, val title: String, val company: String, val linkedin: String, val website: String)
+data class UpdateProfileRequest(val username: String, val email: String, val name: String, val title: String, val company: String, val linkedin: String, val website: String, @kotlinx.serialization.SerialName("avatar_url") val avatarUrl: String? = null)
 
 @kotlinx.serialization.Serializable
 data class MarkMessagesReadRequest(val chatId: String, val userId: String)
@@ -110,7 +110,11 @@ data class ApiResponse(val success: Boolean, val message: String? = null)
 object RetrofitClient {
     private const val BASE_URL = "https://connect-mitron.vercel.app/"
     
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        coerceInputValues = true
+    }
 
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)

@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-const pool = mysql.createPool({ uri: "mysql://mitron_user:MitronSecure2026!@51.79.143.65:3306/mitron_db", waitForConnections: true, connectionLimit: 10 });
+const pool = mysql.createPool({ uri: process.env.DATABASE_URL, waitForConnections: true, connectionLimit: 10 });
 
 // SECURITY HOLE PATCH: API Key Middleware
 const API_KEY = "MITRON_SECURE_KEY_2026";
@@ -276,7 +276,7 @@ function sendFcmPush(userId, title, body, data) {
         sendToUser(userId, 'notification', { title, body, data: data || {} });
         resolve();
     });
-});
+}
 
 // AI Briefing: Get recent companies matching user's industry
 app.get('/api/recent-companies', authenticate, async (req, res) => {
