@@ -7,10 +7,10 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-
-const pool = mysql.createPool({ uri: process.env.DATABASE_URL, waitForConnections: true, connectionLimit: 10 });
+const pool = mysql.createPool({ uri: "mysql://mitron_user:MitronSecure2026!@51.79.143.65:3306/mitron_db", waitForConnections: true, connectionLimit: 10 });
 
 // SECURITY HOLE PATCH: API Key Middleware
 const API_KEY = "MITRON_SECURE_KEY_2026";
@@ -23,6 +23,7 @@ const authenticate = (req, res, next) => {
 };
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.get('/api/version', (req, res) => { res.json({ version: '1.0.1_avatar' }); });
 
 // Android API Endpoints (Secured)
 app.get('/api/users', authenticate, async (req, res) => {
