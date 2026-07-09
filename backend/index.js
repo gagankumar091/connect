@@ -3,6 +3,7 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 const path = require('path');
 const https = require('https');
+const { RtcTokenBuilder, RtcRole } = require('agora-token');
 require('dotenv').config();
 
 const app = express();
@@ -77,7 +78,7 @@ app.post('/api/events', authenticate, async (req, res) => {
 app.get('/api/chats/:userId', authenticate, async (req, res) => {
     try {
         const userId = req.params.userId;
-        const [rows] = await pool.query(`SELECT c.*, u.id as actual_contact_id, u.name as contact_name, u.company as contact_company FROM chats c JOIN users u ON (c.contact_id = u.id AND c.user_id = ?) OR (c.user_id = u.id AND c.contact_id = ?) WHERE c.user_id = ? OR c.contact_id = ?`, [userId, userId, userId, userId]);
+        const [rows] = await pool.query(`SELECT c.*, u.id as actual_contact_id, u.name as contact_name, u.company as contact_company, u.score as contact_score FROM chats c JOIN users u ON (c.contact_id = u.id AND c.user_id = ?) OR (c.user_id = u.id AND c.contact_id = ?) WHERE c.user_id = ? OR c.contact_id = ?`, [userId, userId, userId, userId]);
         const mappedRows = await Promise.all(rows.map(async (r) => {
             const [unreadRows] = await pool.query('SELECT COUNT(*) as cnt FROM messages WHERE chat_id = ? AND sender_id != ? AND is_read = FALSE', [r.id, userId]);
             const unreadCount = unreadRows[0].cnt;
@@ -90,7 +91,7 @@ app.get('/api/chats/:userId', authenticate, async (req, res) => {
                 lastMessage: r.last_message || '',
                 lastMessageTime: r.updated_at ? r.updated_at.toISOString() : r.timestamp ? r.timestamp.toISOString() : new Date().toISOString(),
                 unreadCount: unreadCount,
-                scoreLabel: '90/100',
+                scoreLabel: (r.contact_score || '0').toString(),
                 color: 'PRO',
                 overdue: false
             };
@@ -199,6 +200,29 @@ app.put('/api/users/:id', authenticate, async (req, res) => {
 });
 
 // MISSING DATA HOLES PATCHED:
+
+app.post('/api/timeline', authenticate, async (req, res) => {
+    try {
+        const { id, contact_id, content, subtitle, icon, color, is_meeting } = req.body;
+        await pool.query(
+            'INSERT INTO timeline_events (id, contact_id, content, subtitle, icon, color, is_meeting) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id, contact_id, content, subtitle, icon, color, is_meeting]
+        );
+        res.json({ success: true, id });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/meeting-summaries', authenticate, async (req, res) => {
+    try {
+        const { id, contact_id, summary, pain_point, budget, action_items } = req.body;
+        await pool.query(
+            'INSERT INTO meeting_summaries (id, contact_id, summary, pain_point, budget, action_items) VALUES (?, ?, ?, ?, ?, ?)',
+            [id, contact_id, summary, pain_point, budget, action_items]
+        );
+        res.json({ success: true, id });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/timeline/:contactId', authenticate, async (req, res) => {
     try { const [rows] = await pool.query('SELECT * FROM timeline_events WHERE contact_id = ?', [req.params.contactId]); res.json(rows); }
     catch (e) { res.status(500).json({ error: e.message }) }
@@ -308,6 +332,190 @@ const PORT = process.env.PORT || 3000;
 if (require.main === module) { app.listen(PORT, () => console.log(`Server running on ${PORT}`)); }
 module.exports = app;
 
+// ======= ADDITIONAL ENDPOINTS =======
+
+// Get single event by ID
+app.get('/api/events/:id', authenticate, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+        const r = rows[0];
+        res.json({ ...r, attendee_ids: r.attendee_ids ? r.attendee_ids.split(',') : [] });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Join / Attend an event
+app.post('/api/events/:id/attend', authenticate, async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const [rows] = await pool.query('SELECT attendee_ids FROM events WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+        const existing = rows[0].attendee_ids ? rows[0].attendee_ids.split(',') : [];
+        if (!existing.includes(userId)) {
+            existing.push(userId);
+            await pool.query('UPDATE events SET attendee_ids = ? WHERE id = ?', [existing.join(','), req.params.id]);
+        }
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get single company by ID
+app.get('/api/companies/:id', authenticate, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM companies WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Company not found' });
+        res.json(rows[0]);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create company with full profile fields
+app.post('/api/companies/create', authenticate, async (req, res) => {
+    try {
+        const { name, descriptor, employees, avatar_url, website, description, industry, founded, headquarters, employee_range, funding } = req.body;
+        const id = 'comp_' + Date.now();
+        await pool.query(
+            'INSERT INTO companies (id, name, descriptor, employees, avatar_url, website, description, industry, founded, headquarters, employee_range, funding) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, name, descriptor, employees || 0, avatar_url, website, description, industry, founded, headquarters, employee_range, funding]
+        );
+        res.json({ success: true, id });
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Get users by company name
+app.get('/api/users/by-company', authenticate, async (req, res) => {
+    try {
+        const { company } = req.query;
+        const [rows] = await pool.query('SELECT * FROM users WHERE company = ?', [company]);
+        res.json(rows);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get reminders for user
+app.get('/api/reminders/:userId', authenticate, async (req, res) => {
+    try {
+        // Pull REMINDER type notifications as reminders
+        const [rows] = await pool.query(
+            "SELECT n.*, u.avatar_url FROM notifications n LEFT JOIN users u ON n.action_id = u.id WHERE n.user_id = ? AND n.type = 'REMINDER' ORDER BY n.created_at DESC",
+            [req.params.userId]
+        );
+        const now = new Date();
+        const mapped = rows.map(r => ({
+            ...r,
+            is_past_due: r.due_date ? new Date(r.due_date) < now : false
+        }));
+        res.json(mapped);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create a reminder
+app.post('/api/reminders', authenticate, async (req, res) => {
+    try {
+        const { userId, title, description, actionId, dueDate } = req.body;
+        const id = 'notif_remind_' + Date.now();
+        await pool.query(
+            'INSERT INTO notifications (id, user_id, title, description, type, action_id, due_date, is_read) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, userId, title, description, 'REMINDER', actionId, dueDate || null, false]
+        );
+        res.json({ success: true, id });
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Compute relationship score dynamically
+app.get('/api/score/:contactId', authenticate, async (req, res) => {
+    try {
+        const userId = req.headers['x-user-id'] || req.query.userId;
+        const contactId = req.params.contactId;
+        
+        // Base score from users table
+        const [userRows] = await pool.query('SELECT score, days_since_contact FROM users WHERE id = ?', [contactId]);
+        if (userRows.length === 0) return res.status(404).json({ error: 'User not found' });
+        
+        const baseScore = userRows[0].score || 50;
+        const daysSince = userRows[0].days_since_contact || 30;
+        
+        // Compute deduction: -1 per day stale, max -40
+        const stalePenalty = Math.min(40, Math.floor(daysSince * 0.5));
+        
+        // Count messages between users
+        const [msgRows] = await pool.query(
+            'SELECT COUNT(*) as cnt FROM messages m JOIN chats c ON m.chat_id = c.id WHERE (c.user_id = ? AND c.contact_id = ?) OR (c.user_id = ? AND c.contact_id = ?)',
+            [userId, contactId, contactId, userId]
+        );
+        const msgBonus = Math.min(20, msgRows[0].cnt * 2);
+        
+        const finalScore = Math.max(0, Math.min(100, baseScore - stalePenalty + msgBonus));
+        const strength = finalScore >= 80 ? 'Strong' : finalScore >= 50 ? 'Good' : 'Weak';
+        
+        res.json({
+            score: finalScore,
+            daysSinceContact: daysSince,
+            strength,
+            lastSpokeLabel: daysSince === 0 ? 'Today' : `${daysSince} days ago`
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ======= AGORA CALLING ENDPOINTS =======
+
+// Generate a token for a user to join a channel
+app.post('/api/calls/token', authenticate, (req, res) => {
+    try {
+        const { channelName, uid, role } = req.body;
+        const appId = process.env.AGORA_APP_ID;
+        const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+        
+        if (!appId || !appCertificate) {
+            return res.status(500).json({ error: 'Agora credentials not configured' });
+        }
+
+        const expireTime = 3600; // 1 hour
+        const currentTime = Math.floor(Date.now() / 1000);
+        const privilegeExpireTime = currentTime + expireTime;
+
+        const tokenRole = role === 'publisher' ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
+        const token = RtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channelName, uid || 0, tokenRole, expireTime, privilegeExpireTime);
+        
+        res.json({ success: true, token });
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Initiate a call and send SSE notification to receiver
+app.post('/api/calls/initiate', authenticate, async (req, res) => {
+    try {
+        const { callerId, receiverId, isVideo } = req.body;
+        const channelName = `call_${callerId}_${receiverId}_${Date.now()}`;
+        
+        const appId = process.env.AGORA_APP_ID;
+        const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+        
+        if (!appId || !appCertificate) {
+            return res.status(500).json({ error: 'Agora credentials not configured' });
+        }
+
+        const expireTime = 3600;
+        const privilegeExpireTime = Math.floor(Date.now() / 1000) + expireTime;
+        
+        // Token for caller
+        const callerToken = RtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channelName, 0, RtcRole.PUBLISHER, expireTime, privilegeExpireTime);
+
+        // Fetch caller details for the incoming call screen
+        const [users] = await pool.query('SELECT name, avatar_url FROM users WHERE id = ?', [callerId]);
+        const callerName = users.length > 0 ? users[0].name : 'Someone';
+        const callerAvatar = users.length > 0 ? users[0].avatar_url : null;
+        
+        // Send SSE event to receiver
+        sendToUser(receiverId, 'incoming_call', {
+            channelName,
+            callerId,
+            callerName,
+            callerAvatar,
+            isVideo
+        });
+        
+        res.json({ success: true, channelName, token: callerToken });
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // AUTHENTICATION ENDPOINTS
 app.post('/api/register', async (req, res) => {
     try {
@@ -371,18 +579,38 @@ app.post('/api/users/location', authenticate, async (req, res) => {
 app.post('/api/connections', authenticate, async (req, res) => {
     try {
         const { senderId, receiverId } = req.body;
+
+        // --- DEDUPLICATION: Check if a connection already exists in either direction ---
+        const [existing] = await pool.query(
+            `SELECT id, status FROM connections
+             WHERE (sender_id = ? AND receiver_id = ?)
+                OR (sender_id = ? AND receiver_id = ?)`,
+            [senderId, receiverId, receiverId, senderId]
+        );
+
+        if (existing.length > 0) {
+            // Already sent or already accepted — do not create duplicate
+            return res.json({ success: true, alreadyExists: true, status: existing[0].status });
+        }
+
         const id = 'conn_' + Date.now();
         await pool.query('INSERT INTO connections (id, sender_id, receiver_id) VALUES (?, ?, ?)', [id, senderId, receiverId]);
 
-        // Fetch sender details to personalize notification
+        // Fetch sender details
         const [users] = await pool.query('SELECT name FROM users WHERE id = ?', [senderId]);
         const senderName = users.length > 0 ? users[0].name : 'Someone';
 
-        const notifId = 'notif_' + Date.now();
-        await pool.query('INSERT INTO notifications (id, user_id, title, description, type, action_id) VALUES (?, ?, ?, ?, ?, ?)',
-            [notifId, receiverId, 'New Connection Request', `${senderName} wants to connect with you.`, 'CONNECTION_REQUEST', senderId]);
-
-        sendFcmPush(receiverId, 'New Connection Request', `${senderName} wants to connect with you.`, { type: 'connection', action_id: senderId });
+        // --- DEDUPLICATION: Only insert notification if one doesn't already exist for this pair ---
+        const [existingNotif] = await pool.query(
+            `SELECT id FROM notifications WHERE user_id = ? AND action_id = ? AND type = 'CONNECTION_REQUEST'`,
+            [receiverId, senderId]
+        );
+        if (existingNotif.length === 0) {
+            const notifId = 'notif_' + Date.now();
+            await pool.query('INSERT INTO notifications (id, user_id, title, description, type, action_id) VALUES (?, ?, ?, ?, ?, ?)',
+                [notifId, receiverId, 'New Connection Request', `${senderName} wants to connect with you.`, 'CONNECTION_REQUEST', senderId]);
+            sendFcmPush(receiverId, 'New Connection Request', `${senderName} wants to connect with you.`, { type: 'connection', action_id: senderId });
+        }
 
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -399,21 +627,46 @@ app.post('/api/connections/reject', authenticate, async (req, res) => {
 app.post('/api/connections/accept', authenticate, async (req, res) => {
     try {
         const { senderId, receiverId } = req.body;
-        // Update connection status
+
+        // Update connection status (idempotent)
         await pool.query("UPDATE connections SET status = 'ACCEPTED' WHERE sender_id = ? AND receiver_id = ?", [senderId, receiverId]);
 
-        // Create chat
-        const chatId = 'chat_' + Date.now();
-        await pool.query('INSERT INTO chats (id, user_id, contact_id, last_message, updated_at) VALUES (?, ?, ?, ?, ?)',
-            [chatId, receiverId, senderId, 'Connection accepted', new Date()]);
+        // --- DEDUPLICATION: Check if a chat already exists between these two users ---
+        const [existingChat] = await pool.query(
+            `SELECT id FROM chats
+             WHERE (user_id = ? AND contact_id = ?)
+                OR (user_id = ? AND contact_id = ?)`,
+            [receiverId, senderId, senderId, receiverId]
+        );
 
-        // Notify sender
-        const notifId = 'notif_' + Date.now();
-        await pool.query('INSERT INTO notifications (id, user_id, title, description, type, action_id) VALUES (?, ?, ?, ?, ?, ?)',
-            [notifId, senderId, 'Connection Accepted', 'Someone accepted your connection request.', 'NEW_MESSAGE', receiverId]);
+        let chatId;
+        if (existingChat.length > 0) {
+            // Chat already exists — reuse it, don't create a duplicate
+            chatId = existingChat[0].id;
+        } else {
+            chatId = 'chat_' + Date.now();
+            await pool.query('INSERT INTO chats (id, user_id, contact_id, last_message, updated_at) VALUES (?, ?, ?, ?, ?)',
+                [chatId, receiverId, senderId, 'Connection accepted', new Date()]);
+        }
 
-        sendFcmPush(senderId, 'Connection Accepted', 'Your connection request was accepted!', { type: 'chat', chatId: chatId, action_id: chatId });
+        // --- DEDUPLICATION: Only notify sender once ---
+        const [existingNotif] = await pool.query(
+            `SELECT id FROM notifications WHERE user_id = ? AND action_id = ? AND type = 'NEW_MESSAGE'`,
+            [senderId, receiverId]
+        );
+        if (existingNotif.length === 0) {
+            const notifId = 'notif_' + Date.now();
+            await pool.query('INSERT INTO notifications (id, user_id, title, description, type, action_id) VALUES (?, ?, ?, ?, ?, ?)',
+                [notifId, senderId, 'Connection Accepted', 'Your connection request was accepted.', 'NEW_MESSAGE', chatId]);
+            sendFcmPush(senderId, 'Connection Accepted', 'Your connection request was accepted!', { type: 'chat', chatId, action_id: chatId });
+        }
 
-        res.json({ success: true });
+        // Mark the original connection-request notification as read so it disappears from the list
+        await pool.query(
+            `UPDATE notifications SET is_read = TRUE WHERE user_id = ? AND action_id = ? AND type = 'CONNECTION_REQUEST'`,
+            [receiverId, senderId]
+        );
+
+        res.json({ success: true, chatId });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
