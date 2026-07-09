@@ -628,8 +628,12 @@ app.post('/api/connections/accept', authenticate, async (req, res) => {
     try {
         const { senderId, receiverId } = req.body;
 
-        // Update connection status (idempotent)
-        await pool.query("UPDATE connections SET status = 'ACCEPTED' WHERE sender_id = ? AND receiver_id = ?", [senderId, receiverId]);
+        // Update connection status (idempotent, use affectedRows for atomic deduplication)
+        const [updateResult] = await pool.query("UPDATE connections SET status = 'ACCEPTED' WHERE sender_id = ? AND receiver_id = ? AND status != 'ACCEPTED'", [senderId, receiverId]);
+        if (updateResult.affectedRows === 0) {
+            // Already accepted or doesn't exist. Prevent duplicate chat creation.
+            return res.json({ success: true, alreadyAccepted: true });
+        }
 
         // --- DEDUPLICATION: Check if a chat already exists between these two users ---
         const [existingChat] = await pool.query(
