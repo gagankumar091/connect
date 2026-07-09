@@ -92,7 +92,7 @@ async function runFullMigration() {
         const [count] = await pool.query('SELECT COUNT(*) as cnt FROM briefing_items');
         if (count[0].cnt === 0) {
             await pool.query(`INSERT INTO briefing_items (id, title, description, type, priority) VALUES
-                ('brief_default_1', 'Follow up with a contact', 'Reach out to someone you haven\'t connected with recently.', 'task', 1),
+                ('brief_default_1', 'Follow up with a contact', 'Reach out to someone you have not connected with recently.', 'task', 1),
                 ('brief_default_2', 'Review new companies', 'Check out recently added companies in your network.', 'task', 2),
                 ('brief_default_3', 'Attend a nearby event', 'Find and register for professional events near you.', 'task', 3)
             `);

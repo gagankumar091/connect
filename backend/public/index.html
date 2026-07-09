@@ -1,108 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mitron Admin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>Mitron Advanced Admin</title>
+    <!-- Modern premium fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .delete-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-        .delete-btn:hover { background: #dc2626; }
-    </style>
 </head>
+
 <body>
-    <div class="glow-bg"></div>
     <div class="dashboard-container">
-        <aside class="sidebar glass-panel">
+        <!-- Sidebar -->
+        <aside class="sidebar">
             <h1 class="logo">Mitron<span class="gradient-text">.Admin</span></h1>
             <nav>
-                <a href="#" class="nav-item active" onclick="showTab('users', event)">Live Users</a>
-                <a href="#" class="nav-item" onclick="showTab('events', event)">Events</a>
-                <a href="#" class="nav-item" onclick="showTab('companies', event)">Companies</a>
-                <a href="#" class="nav-item" onclick="showTab('add-user', event)">+ Add Employee</a>
-                <a href="#" class="nav-item" onclick="showTab('add-company', event)">+ Add Company</a>
-                <a href="#" class="nav-item" onclick="showTab('add-event', event)">+ Add Event</a>
+                <a href="#" class="nav-item active" onclick="showTab('users', event)">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
+                    Live Users
+                </a>
+                <a href="#" class="nav-item" onclick="showTab('events', event)">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                    Events
+                </a>
+                <a href="#" class="nav-item" onclick="showTab('companies', event)">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                        </path>
+                    </svg>
+                    Companies
+                </a>
+
+                <div
+                    style="margin: 20px 0 10px 0; padding-left: 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">
+                    Actions</div>
+
+                <a href="#" class="nav-item" onclick="showTab('add-user', event)">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Employee
+                </a>
+                <a href="#" class="nav-item" onclick="showTab('add-company', event)">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Company
+                </a>
+                <a href="#" class="nav-item" onclick="showTab('add-event', event)">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Broadcast Event
+                </a>
             </nav>
         </aside>
 
+        <!-- Main Workspace -->
         <main class="main-content">
-            <header class="topbar glass-panel">
-                <h2>Admin Control Panel</h2>
+            <header class="topbar">
+                <h2>Admin Control Center</h2>
+                <div class="user-badge">
+                    System Online
+                </div>
             </header>
 
+            <!-- Users Tab -->
             <div id="users-tab" class="tab-content active">
                 <h2 class="section-title">Manage Users</h2>
-                <div class="glass-panel table-container">
+                <div class="glass-panel table-wrapper">
                     <table class="data-table">
-                        <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Actions</th></tr></thead>
-                        <tbody id="users-table-body"></tbody>
+                        <thead>
+                            <tr>
+                                <th>Name / Profile</th>
+                                <th>Email Address</th>
+                                <th>Company</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
                     </table>
                 </div>
             </div>
 
+            <!-- Events Tab -->
             <div id="events-tab" class="tab-content">
                 <h2 class="section-title">Manage Events</h2>
-                <div class="glass-panel table-container">
+                <div class="glass-panel table-wrapper">
                     <table class="data-table">
-                        <thead><tr><th>Title</th><th>Location</th><th>Date</th><th>Actions</th></tr></thead>
-                        <tbody id="events-table-body"></tbody>
+                        <thead>
+                            <tr>
+                                <th>Event Title</th>
+                                <th>Location</th>
+                                <th>Date Overview</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
                     </table>
                 </div>
             </div>
 
+            <!-- Companies Tab -->
             <div id="companies-tab" class="tab-content">
                 <h2 class="section-title">Manage Companies</h2>
-                <div class="glass-panel table-container">
+                <div class="glass-panel table-wrapper">
                     <table class="data-table">
-                        <thead><tr><th>Name</th><th>Descriptor</th><th>Employees</th><th>Actions</th></tr></thead>
-                        <tbody id="companies-table-body"></tbody>
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Market Descriptor</th>
+                                <th>Employees</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="companies-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
                     </table>
                 </div>
             </div>
 
+            <!-- Add User Tab -->
             <div id="add-user-tab" class="tab-content">
-                <h2 class="section-title">Add Employee</h2>
+                <h2 class="section-title">Onboard Employee</h2>
                 <div class="glass-panel form-container">
                     <form id="user-form">
-                        <div class="form-group"><label>Name</label><input type="text" id="usr-name" required></div>
-                        <div class="form-group"><label>Email</label><input type="email" id="usr-email" required></div>
-                        <div class="form-group"><label>Company Name</label><input type="text" id="usr-comp" required></div>
-                        <div class="form-group"><label>Job Title</label><input type="text" id="usr-title" required></div>
-                        <button type="submit" class="btn-primary">Add Employee</button>
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="usr-name" class="glass-input" placeholder="e.g. Jane Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="usr-email" class="glass-input" placeholder="jane@example.com"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Company Association</label>
+                            <input type="text" id="usr-comp" class="glass-input" placeholder="e.g. Mitron Tech"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Professional Title</label>
+                            <input type="text" id="usr-title" class="glass-input" placeholder="e.g. Senior Engineer"
+                                required>
+                        </div>
+                        <button type="submit" class="btn-primary">Provision Employee</button>
                     </form>
                 </div>
             </div>
 
+            <!-- Add Company Tab -->
             <div id="add-company-tab" class="tab-content">
-                <h2 class="section-title">Add Company</h2>
+                <h2 class="section-title">Register Company</h2>
                 <div class="glass-panel form-container">
                     <form id="company-form">
-                        <div class="form-group"><label>Company Name</label><input type="text" id="comp-name" required></div>
-                        <div class="form-group"><label>Descriptor (e.g. B2B SaaS)</label><input type="text" id="comp-desc" required></div>
-                        <div class="form-group"><label>Employees Count</label><input type="number" id="comp-emp" required></div>
-                        <button type="submit" class="btn-primary">Add Company</button>
+                        <div class="form-group">
+                            <label>Company Name</label>
+                            <input type="text" id="comp-name" class="glass-input" placeholder="e.g. Apex Dynamics"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Market Descriptor</label>
+                            <input type="text" id="comp-desc" class="glass-input" placeholder="e.g. B2B SaaS Platform"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Employee Headcount</label>
+                            <input type="number" id="comp-emp" class="glass-input" placeholder="e.g. 150" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Create Company Profile</button>
                     </form>
                 </div>
             </div>
 
+            <!-- Broadcast Event Tab -->
             <div id="add-event-tab" class="tab-content">
                 <h2 class="section-title">Broadcast New Event</h2>
                 <div class="glass-panel form-container">
                     <form id="event-form">
-                        <div class="form-group"><label>Event Title</label><input type="text" id="ev-title" required></div>
-                        <div class="form-group"><label>Location Name</label><input type="text" id="ev-loc" required></div>
-                        <div class="form-group"><label>Date & Time</label><input type="text" id="ev-date" required></div>
-                        <div style="display: flex; gap: 10px;">
-                            <div class="form-group" style="flex: 1;"><label>Latitude</label><input type="number" step="any" id="ev-lat" required></div>
-                            <div class="form-group" style="flex: 1;"><label>Longitude</label><input type="number" step="any" id="ev-lng" required></div>
-                        </div>
-                        <div class="form-group"><label>Description</label><textarea id="ev-desc" rows="3" required></textarea></div>
                         <div class="form-group">
-                            <label>Attendees (Hold Ctrl/Cmd to select multiple)</label>
-                            <select id="ev-attendees" multiple style="height: 120px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);"></select>
+                            <label>Event Title</label>
+                            <input type="text" id="ev-title" class="glass-input" placeholder="e.g. Q3 Tech Summit"
+                                required>
                         </div>
-                        <button type="submit" class="btn-primary">Broadcast Event</button>
+                        <div class="form-group">
+                            <label>Location Name</label>
+                            <input type="text" id="ev-loc" class="glass-input" placeholder="e.g. Moscone Center, SF"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date & Time</label>
+                            <input type="text" id="ev-date" class="glass-input"
+                                placeholder="e.g. Oct 24, 2026 at 9:00 AM" required>
+                        </div>
+                        <div style="display: flex; gap: 16px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Latitude</label>
+                                <input type="number" step="any" id="ev-lat" class="glass-input" placeholder="37.783"
+                                    required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>Longitude</label>
+                                <input type="number" step="any" id="ev-lng" class="glass-input" placeholder="-122.400"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Event Details</label>
+                            <textarea id="ev-desc" rows="4" class="glass-input"
+                                placeholder="Brief description of the event..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Target Attendees (Hold Ctrl/Cmd to select multiple)</label>
+                            <select id="ev-attendees" class="glass-input" multiple></select>
+                        </div>
+                        <button type="submit" class="btn-primary">Launch Broadcast</button>
                     </form>
                 </div>
             </div>
@@ -110,4 +239,5 @@
     </div>
     <script src="app.js"></script>
 </body>
+
 </html>

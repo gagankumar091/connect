@@ -190,10 +190,10 @@ app.get('/api/user-profile/:id', authenticate, async (req, res) => {
 
 app.put('/api/users/:id', authenticate, async (req, res) => {
     try {
-        const { username, email, name, title, company, linkedin, website, avatar_url } = req.body;
+        const { username, email, name, title, company, linkedin, website, avatar_url, phone } = req.body;
         await pool.query(
-            'UPDATE users SET username = ?, email = ?, name = ?, title = ?, company = ?, linkedin = ?, website = ?, avatar_url = ? WHERE id = ?',
-            [username, email, name, title, company, linkedin, website, avatar_url, req.params.id]
+            'UPDATE users SET username = ?, email = ?, name = ?, title = ?, company = ?, linkedin = ?, website = ?, avatar_url = ?, phone = ? WHERE id = ?',
+            [username, email, name, title, company, linkedin, website, avatar_url, phone, req.params.id]
         );
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -519,9 +519,9 @@ app.post('/api/calls/initiate', authenticate, async (req, res) => {
 // AUTHENTICATION ENDPOINTS
 app.post('/api/register', async (req, res) => {
     try {
-        const { username, password, name, email } = req.body;
+        const { username, password, name, email, phone } = req.body;
         const id = 'user_' + Date.now();
-        await pool.query('INSERT INTO users (id, username, password, name, email) VALUES (?, ?, ?, ?, ?)', [id, username, password, name, email]);
+        await pool.query('INSERT INTO users (id, username, password, name, email, phone) VALUES (?, ?, ?, ?, ?, ?)', [id, username, password, name, email, phone]);
         res.json({ success: true, userId: id });
     } catch (e) {
         console.error(e);
