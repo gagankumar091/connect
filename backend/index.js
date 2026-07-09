@@ -461,8 +461,8 @@ app.get('/api/score/:contactId', authenticate, async (req, res) => {
 app.post('/api/calls/token', authenticate, (req, res) => {
     try {
         const { channelName, uid, role } = req.body;
-        const appId = process.env.AGORA_APP_ID;
-        const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+        const appId = process.env.AGORA_APP_ID || 'd5d98935c72d46a68385409d52c31ad9';
+        const appCertificate = process.env.AGORA_APP_CERTIFICATE || '1db0c2b1688e4547a95ca0232359bfa3';
         
         if (!appId || !appCertificate) {
             return res.status(500).json({ error: 'Agora credentials not configured' });
@@ -485,8 +485,8 @@ app.post('/api/calls/initiate', authenticate, async (req, res) => {
         const { callerId, receiverId, isVideo } = req.body;
         const channelName = `call_${callerId}_${receiverId}_${Date.now()}`;
         
-        const appId = process.env.AGORA_APP_ID;
-        const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+        const appId = process.env.AGORA_APP_ID || 'd5d98935c72d46a68385409d52c31ad9';
+        const appCertificate = process.env.AGORA_APP_CERTIFICATE || '1db0c2b1688e4547a95ca0232359bfa3';
         
         if (!appId || !appCertificate) {
             return res.status(500).json({ error: 'Agora credentials not configured' });
