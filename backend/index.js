@@ -85,8 +85,8 @@ app.get('/api/chats/:userId', authenticate, async (req, res) => {
             return {
                 id: r.id,
                 contactId: r.actual_contact_id,
-                initials: (r.contact_name || '').substring(0, 2).toUpperCase(),
-                name: r.contact_name,
+                initials: (r.contact_name || 'Unknown').substring(0, 2).toUpperCase(),
+                name: r.contact_name || 'Unknown User',
                 company: r.contact_company || 'No Company',
                 lastMessage: r.last_message || '',
                 lastMessageTime: r.updated_at ? r.updated_at.toISOString() : r.timestamp ? r.timestamp.toISOString() : new Date().toISOString(),
