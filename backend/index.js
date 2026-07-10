@@ -473,7 +473,7 @@ app.post('/api/calls/token', authenticate, (req, res) => {
         const privilegeExpireTime = currentTime + expireTime;
 
         const tokenRole = role === 'publisher' ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
-        const token = RtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channelName, uid || 0, tokenRole, expireTime, privilegeExpireTime);
+        const token = RtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channelName, uid || 0, tokenRole, privilegeExpireTime);
         
         res.json({ success: true, token });
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
@@ -496,7 +496,7 @@ app.post('/api/calls/initiate', authenticate, async (req, res) => {
         const privilegeExpireTime = Math.floor(Date.now() / 1000) + expireTime;
         
         // Token for caller
-        const callerToken = RtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channelName, 0, RtcRole.PUBLISHER, expireTime, privilegeExpireTime);
+        const callerToken = RtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channelName, 0, RtcRole.PUBLISHER, privilegeExpireTime);
 
         // Fetch caller details for the incoming call screen
         const [users] = await pool.query('SELECT name, avatar_url FROM users WHERE id = ?', [callerId]);
