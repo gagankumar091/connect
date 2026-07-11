@@ -19,15 +19,33 @@ class EditProfileViewModel(
     private val _isSuccess = MutableStateFlow(false)
     val isSuccess: StateFlow<Boolean> = _isSuccess.asStateFlow()
 
-    fun updateProfile(username: String, email: String, name: String, title: String, company: String, linkedin: String, website: String, imageUri: Uri?) {
+    private val _profile = MutableStateFlow<com.mitron.connect.data.model.Contact?>(null)
+    val profile: StateFlow<com.mitron.connect.data.model.Contact?> = _profile.asStateFlow()
+
+    init {
+        loadProfile()
+    }
+
+    fun loadProfile() {
+        viewModelScope.launch {
+            try {
+                val p = repository.getUserProfile()
+                _profile.value = p
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun updateProfile(username: String, email: String, name: String, title: String, company: String, linkedin: String, website: String, phone: String?, imageUri: Uri?) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                var avatarUrl: String? = null
+                var finalAvatarUrl = _profile.value?.avatarUrl
                 if (imageUri != null) {
-                    avatarUrl = repository.uploadProfilePicture(imageUri)
+                    finalAvatarUrl = repository.uploadProfilePicture(imageUri)
                 }
-                val success = repository.updateUserProfile(username, email, name, title, company, linkedin, website, avatarUrl)
+                val success = repository.updateUserProfile(username, email, name, title, company, linkedin, website, phone, finalAvatarUrl)
                 _isSuccess.value = success
             } catch (e: Exception) {
                 e.printStackTrace()

@@ -22,16 +22,23 @@ class EventDetailViewModel(private val repository: VercelRepository = VercelRepo
 
     fun loadEvent(eventId: String) {
         viewModelScope.launch {
-            // Find the event
-            val events = repository.getEvents()
-            val currentEvent = events.find { it.id == eventId }
-            _event.value = currentEvent
-            
-            // Mock attendees by getting some contacts (for demo, just get all contacts except current user)
-            val contacts = repository.getContacts()
-            // Randomly select 5 attendees for demonstration purposes
-            val simulatedAttendees = contacts.shuffled().take(5)
-            _attendees.value = simulatedAttendees
+            // Prefer single-event fetch, fall back to list search
+            val currentEvent = try {
+                repository.getEventById(eventId)
+            } catch (e: Exception) {
+                repository.getEvents().find { it.id == eventId }
+            }
+            _event.value = currentEvent ?: return@launch
+
+            // Load REAL attendees from the event's attendee_ids
+            if (currentEvent.attendeeIds.isNotEmpty()) {
+                val allUsers = repository.getContacts()
+                val realAttendees = allUsers.filter { it.id in currentEvent.attendeeIds }
+                _attendees.value = realAttendees
+            } else {
+                // No attendees registered yet
+                _attendees.value = emptyList()
+            }
         }
     }
 

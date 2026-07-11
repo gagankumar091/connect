@@ -41,3 +41,17 @@ fun Avatar(
         )
     }
 }
+
+fun String?.toImageModel(): Any? {
+    if (this == null) return null
+    if (this.startsWith("data:image")) {
+        try {
+            val base64Str = this.substringAfter("base64,")
+            val decodedBytes = android.util.Base64.decode(base64Str, android.util.Base64.DEFAULT)
+            return android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    return this
+}

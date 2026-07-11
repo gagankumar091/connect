@@ -41,7 +41,12 @@ fun ConnectNavGraph(navController: NavHostController = rememberNavController()) 
                         popUpTo(Destinations.WELCOME) { inclusive = true }
                     }
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToSignUp = {
+                    navController.navigate(Destinations.SIGN_UP) {
+                        popUpTo(Destinations.SIGN_IN) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -52,7 +57,12 @@ fun ConnectNavGraph(navController: NavHostController = rememberNavController()) 
                         popUpTo(Destinations.WELCOME) { inclusive = true }
                     }
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToLogin = {
+                    navController.navigate(Destinations.SIGN_IN) {
+                        popUpTo(Destinations.SIGN_UP) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -86,6 +96,8 @@ fun ConnectNavGraph(navController: NavHostController = rememberNavController()) 
                 onBack = { navController.popBackStack() },
                 onOpenTimeline = { id -> navController.navigate(Destinations.timeline(id)) },
                 onOpenBusinessCard = { id -> navController.navigate(Destinations.businessCard(id)) },
+                onOpenRelationshipScore = { id -> navController.navigate(Destinations.relationshipScore(id)) },
+                onOpenChat = { id -> navController.navigate(Destinations.chat(id)) },
                 onEditProfile = { navController.navigate(Destinations.EDIT_PROFILE) },
                 onLogout = {
                     com.mitron.connect.data.SessionManager.clearSession()
@@ -170,6 +182,14 @@ fun ConnectNavGraph(navController: NavHostController = rememberNavController()) 
 
         composable(Destinations.HEALTH_DASHBOARD) {
             HealthDashboardScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Destinations.RELATIONSHIP_SCORE) { backStackEntry ->
+            val contactId = backStackEntry.arguments?.getString("contactId").orEmpty()
+            com.mitron.connect.ui.screens.score.RelationshipScoreScreen(
+                contactId = contactId,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

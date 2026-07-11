@@ -66,9 +66,9 @@ object SampleData {
     )
 
     val chats = listOf(
-        ChatPreview("chat_aditi", "aditi", "AR", "Aditi Rao", "Nimbus Robotics", "Proposal follow-up sent", "91", AccentColor.ACCENT, overdue = true),
-        ChatPreview("chat_karan", "karan", "KS", "Karan Shah", "ABC Robotics", "Demo completed, contract next", "78", AccentColor.NEUTRAL, overdue = false),
-        ChatPreview("chat_priya", "priya", "PM", "Priya Menon", "Northwind Capital", "Festival wishes exchanged", "64", AccentColor.SUCCESS, overdue = false),
+        ChatPreview("chat_aditi", "aditi", "AR", "Aditi Rao", "Nimbus Robotics", "Proposal follow-up sent", scoreLabel = "91", color = AccentColor.ACCENT, overdue = true),
+        ChatPreview("chat_karan", "karan", "KS", "Karan Shah", "ABC Robotics", "Demo completed, contract next", scoreLabel = "78", color = AccentColor.NEUTRAL, overdue = false),
+        ChatPreview("chat_priya", "priya", "PM", "Priya Menon", "Northwind Capital", "Festival wishes exchanged", scoreLabel = "64", color = AccentColor.SUCCESS, overdue = false),
     )
 
     val companies = listOf(
@@ -130,10 +130,10 @@ object SampleData {
     )
 
     val briefing = listOf(
-        BriefingItem("5 important follow-ups today", AccentColor.DANGER),
-        BriefingItem("Rahul's birthday tomorrow", AccentColor.ACCENT),
-        BriefingItem("3 investors viewed your profile", AccentColor.PRO),
-        BriefingItem("ABC Robotics raised funding", AccentColor.SUCCESS),
+        BriefingItem(text = "5 important follow-ups today", color = AccentColor.DANGER),
+        BriefingItem(text = "Rahul's birthday tomorrow", color = AccentColor.ACCENT),
+        BriefingItem(text = "3 investors viewed your profile", color = AccentColor.PRO),
+        BriefingItem(text = "ABC Robotics raised funding", color = AccentColor.SUCCESS),
     )
 
     val suggestedSearches = listOf("founders in Bengaluru", "healthcare AI", "waiting for reply")

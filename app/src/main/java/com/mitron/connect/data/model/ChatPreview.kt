@@ -1,11 +1,15 @@
 package com.mitron.connect.data.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.Date
 
+@Entity(tableName = "chat_previews")
 @Serializable
 data class ChatPreview(
+    @PrimaryKey
     val id: String,
     val contactId: String,
     val initials: String,

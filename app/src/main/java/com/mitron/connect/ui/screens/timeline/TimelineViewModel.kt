@@ -26,7 +26,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 import java.util.UUID
-import kotlinx.coroutines.tasks.await
 
 class TimelineViewModel(private val repository: VercelRepository = VercelRepository()) : ViewModel() {
     private val _events = MutableStateFlow<List<TimelineEvent>>(emptyList())
@@ -85,18 +84,23 @@ class TimelineViewModel(private val repository: VercelRepository = VercelReposit
                     budget = budget,
                     actionItems = action
                 )
-                repository.db.collection("meeting_summaries").document(eventId).set(summary).await()
+                repository.addMeetingSummary(summary)
+                
+                val formatter = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                formatter.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                val nowStr = formatter.format(java.util.Date())
 
                 val event = TimelineEvent(
                     id = eventId,
                     contactId = contactId,
-                    label = "Coffee Meeting",
+                    label = "Discussed Warehouse Automation",
+                    subtitle = "AI Summary available",
                     icon = TimelineIcon.COFFEE,
                     color = AccentColor.ACCENT,
                     isMeeting = true,
-                    createdAt = java.util.Date()
+                    createdAtStr = nowStr
                 )
-                repository.db.collection("timeline_events").document(eventId).set(event).await()
+                repository.addTimelineEvent(event)
                 
                 loadTimeline(contactId)
                 onComplete()

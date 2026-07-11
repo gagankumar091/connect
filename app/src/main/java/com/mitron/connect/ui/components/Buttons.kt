@@ -17,6 +17,7 @@ import com.mitron.connect.ui.theme.ConnectTheme
 fun ConnectPrimaryButton(
     text: String,
     modifier: Modifier = Modifier,
+    containerColor: androidx.compose.ui.graphics.Color = ConnectTheme.colors.fillPrimary,
     onClick: () -> Unit = {},
     enabled: Boolean = true,
 ) {
@@ -25,7 +26,7 @@ fun ConnectPrimaryButton(
         enabled = enabled,
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(
-            containerColor = ConnectTheme.colors.fillPrimary,
+            containerColor = containerColor,
             contentColor = ConnectTheme.colors.onPrimary,
         ),
         shape = MaterialTheme.shapes.small,

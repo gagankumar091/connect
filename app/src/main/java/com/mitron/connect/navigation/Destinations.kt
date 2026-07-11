@@ -17,6 +17,7 @@ object Destinations {
     const val CHAT = "chat/{chatId}"
     const val EDIT_PROFILE = "editProfile"
     const val NOTIFICATIONS = "notifications"
+    const val RELATIONSHIP_SCORE = "relationshipScore/{contactId}"
 
     fun profile(contactId: String) = "profile/$contactId"
     fun timeline(contactId: String) = "timeline/$contactId"
@@ -25,6 +26,7 @@ object Destinations {
     fun company(companyId: String) = "company/$companyId"
     fun event(eventId: String) = "event/$eventId"
     fun chat(chatId: String) = "chat/$chatId"
+    fun relationshipScore(contactId: String) = "relationshipScore/$contactId"
 }
 
-enum class HomeTab { CHATS, PEOPLE, COMPANIES, EVENTS, AI }
+enum class HomeTab { CHATS, CALLS, CONTACTS, EVENTS, AI }

@@ -1,6 +1,5 @@
 package com.mitron.connect.data.model
 
-import com.google.firebase.firestore.PropertyName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -12,16 +11,25 @@ data class Company(
     var funding: String? = null,
     var employees: Int? = null,
     
+    @SerialName("avatar_url")
+    var avatarUrl: String? = null,
+    
+    var website: String? = null,
+    var description: String? = null,
+    var industry: String? = null,
+    var founded: String? = null,
+    var headquarters: String? = null,
+    
+    @SerialName("employee_range")
+    var employeeRange: String? = null,
+    
     @SerialName("open_deals")
-    @get:PropertyName("open_deals") @set:PropertyName("open_deals")
     var openDeals: Int? = null,
     
     @SerialName("contacts_inside")
-    @get:PropertyName("contacts_inside") @set:PropertyName("contacts_inside")
     var contactsInside: String? = null,
     
     @SerialName("recent_news")
-    @get:PropertyName("recent_news") @set:PropertyName("recent_news")
     var recentNews: String? = null,
     
     var color: AccentColor = AccentColor.NEUTRAL,

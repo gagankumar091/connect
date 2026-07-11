@@ -8,41 +8,45 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 
 private val LightScheme = lightColorScheme(
-    primary = BrandRed,
-    onPrimary = OnBrandRed,
-    secondary = AccentTealLight,
-    onSecondary = SurfaceLight1,
-    tertiary = AiPurple,
-    onTertiary = SurfaceLight1,
-    error = DangerRed,
-    onError = SurfaceLight1,
-    background = SurfaceLight1,
-    onBackground = TextPrimaryLight,
-    surface = SurfaceLight1,
-    onSurface = TextPrimaryLight,
-    surfaceVariant = SurfaceLight2,
-    onSurfaceVariant = TextSecondaryLight,
-    outline = BorderStrongLight,
-    outlineVariant = BorderLight,
+    primary           = BrandBlue,
+    onPrimary         = OnBrandBlue,
+    primaryContainer  = AccentTealBgLight,
+    onPrimaryContainer= AccentTealLight,
+    secondary         = AccentTealLight,
+    onSecondary       = SurfaceLight1,
+    tertiary          = AiIndigo,
+    onTertiary        = SurfaceLight1,
+    error             = DangerRed,
+    onError           = SurfaceLight1,
+    background        = SurfaceLight2,
+    onBackground      = TextPrimaryLight,
+    surface           = SurfaceLight1,
+    onSurface         = TextPrimaryLight,
+    surfaceVariant    = SurfaceLight3,
+    onSurfaceVariant  = TextSecondaryLight,
+    outline           = BorderStrongLight,
+    outlineVariant    = BorderLight,
 )
 
 private val DarkScheme = darkColorScheme(
-    primary = BrandRed,
-    onPrimary = OnBrandRed,
-    secondary = AccentTealDark,
-    onSecondary = SurfaceDark1,
-    tertiary = AiPurple,
-    onTertiary = SurfaceDark1,
-    error = DangerRed,
-    onError = SurfaceDark1,
-    background = SurfaceDark1,
-    onBackground = TextPrimaryDark,
-    surface = SurfaceDark1,
-    onSurface = TextPrimaryDark,
-    surfaceVariant = SurfaceDark2,
-    onSurfaceVariant = TextSecondaryDark,
-    outline = BorderStrongDark,
-    outlineVariant = BorderDark,
+    primary           = BrandBlue,
+    onPrimary         = OnBrandBlue,
+    primaryContainer  = AccentTealBgDark,
+    onPrimaryContainer= AccentTealDark,
+    secondary         = AccentTealDark,
+    onSecondary       = SurfaceDark1,
+    tertiary          = AiIndigo,
+    onTertiary        = SurfaceDark1,
+    error             = DangerRed,
+    onError           = SurfaceDark1,
+    background        = SurfaceDark1,
+    onBackground      = TextPrimaryDark,
+    surface           = SurfaceDark2,
+    onSurface         = TextPrimaryDark,
+    surfaceVariant    = SurfaceDark3,
+    onSurfaceVariant  = TextSecondaryDark,
+    outline           = BorderStrongDark,
+    outlineVariant    = BorderDark,
 )
 
 object ConnectTheme {
@@ -55,15 +59,15 @@ fun ConnectAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkScheme else LightScheme
+    val colorScheme   = if (darkTheme) DarkScheme else LightScheme
     val connectColors = if (darkTheme) DarkConnectColors else LightConnectColors
 
     CompositionLocalProvider(LocalConnectColors provides connectColors) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = ConnectTypography,
-            shapes = ConnectShapes,
-            content = content,
+            typography  = ConnectTypography,
+            shapes      = ConnectShapes,
+            content     = content,
         )
     }
 }

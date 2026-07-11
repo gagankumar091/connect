@@ -1,6 +1,5 @@
 package com.mitron.connect.data.model
 
-import com.google.firebase.firestore.PropertyName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.Date
@@ -14,6 +13,5 @@ data class Event(
     var date: String? = null,
     var distance: Double? = null,
     @SerialName("attendee_ids")
-    @get:PropertyName("attendee_ids") @set:PropertyName("attendee_ids")
     var attendeeIds: List<String> = emptyList()
 )

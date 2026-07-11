@@ -6,6 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -20,6 +22,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.mitron.connect.ui.components.ConnectPrimaryButton
 import com.mitron.connect.ui.components.ConnectTopBar
+import com.mitron.connect.ui.components.toImageModel
 import com.mitron.connect.ui.theme.ConnectTheme
 import com.mitron.connect.ui.theme.Spacing
 
@@ -32,14 +35,32 @@ fun EditProfileScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
 
+    val profile by viewModel.profile.collectAsState()
+    
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var company by remember { mutableStateOf("") }
     var linkedin by remember { mutableStateOf("") }
     var website by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var avatarUrl by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(profile) {
+        profile?.let { p ->
+            username = p.username ?: ""
+            email = p.email
+            phone = p.phone ?: ""
+            name = p.name
+            title = p.title ?: ""
+            company = p.company ?: ""
+            linkedin = p.linkedin ?: ""
+            website = p.website ?: ""
+            avatarUrl = p.avatarUrl
+        }
+    }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -60,6 +81,7 @@ fun EditProfileScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(Spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -71,9 +93,9 @@ fun EditProfileScreen(
                     .clickable { launcher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (imageUri != null) {
+                if (imageUri != null || avatarUrl != null) {
                     AsyncImage(
-                        model = imageUri,
+                        model = imageUri ?: avatarUrl?.toImageModel(),
                         contentDescription = "Avatar",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -104,6 +126,17 @@ fun EditProfileScreen(
             )
             
             Spacer(modifier = Modifier.height(Spacing.md))
+
+            Spacer(modifier = Modifier.height(Spacing.md))
+            
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text("Phone Number") },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
 
             OutlinedTextField(
                 value = name,
@@ -157,7 +190,7 @@ fun EditProfileScreen(
 
             ConnectPrimaryButton(
                 text = if (isLoading) "Saving..." else "Save Profile",
-                onClick = { viewModel.updateProfile(username, email, name, title, company, linkedin, website, imageUri) },
+                onClick = { viewModel.updateProfile(username, email, name, title, company, linkedin, website, phone, imageUri) },
                 enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth()
             )

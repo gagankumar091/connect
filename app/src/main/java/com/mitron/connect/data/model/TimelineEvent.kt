@@ -1,6 +1,5 @@
 package com.mitron.connect.data.model
 
-import com.google.firebase.firestore.PropertyName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.Date
@@ -13,11 +12,9 @@ data class TimelineEvent(
     var id: String = "",
     
     @SerialName("contact_id")
-    @get:PropertyName("contact_id") @set:PropertyName("contact_id")
     var contactId: String = "",
     
     @SerialName("content")
-    @get:PropertyName("content") @set:PropertyName("content")
     var label: String = "",
     
     var icon: TimelineIcon = TimelineIcon.LOCATION,
@@ -25,10 +22,21 @@ data class TimelineEvent(
     var color: AccentColor = AccentColor.NEUTRAL,
     
     @SerialName("is_meeting")
-    @get:PropertyName("is_meeting") @set:PropertyName("is_meeting")
     var isMeeting: Boolean = false,
+
+    @SerialName("subtitle")
+    var subtitle: String? = null,
     
-    @get:PropertyName("created_at") @set:PropertyName("created_at")
-    @kotlinx.serialization.Transient
-    var createdAt: Date = Date()
-)
+    @SerialName("created_at")
+    var createdAtStr: String? = null
+) {
+    val createdAt: Date
+        get() {
+            if (createdAtStr == null) return Date()
+            return try {
+                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(createdAtStr!!) ?: Date()
+            } catch (e: Exception) {
+                Date()
+            }
+        }
+}

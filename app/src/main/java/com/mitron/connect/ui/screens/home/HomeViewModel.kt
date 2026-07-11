@@ -15,6 +15,10 @@ import kotlinx.coroutines.async
 
 class HomeViewModel(private val repository: VercelRepository = VercelRepository()) : ViewModel() {
 
+    private val chatDao by lazy {
+        com.mitron.connect.data.local.MitronDatabase.getDatabase(com.mitron.connect.data.SessionManager.appContext).chatDao()
+    }
+
     private val _chats = MutableStateFlow<List<ChatPreview>>(emptyList())
     val chats: StateFlow<List<ChatPreview>> = _chats.asStateFlow()
 
@@ -39,10 +43,22 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
     private val _notifications = MutableStateFlow<List<com.mitron.connect.data.model.AppNotification>>(emptyList())
     val notifications: StateFlow<List<com.mitron.connect.data.model.AppNotification>> = _notifications.asStateFlow()
 
+    private val _currentUser = MutableStateFlow<Contact?>(null)
+    val currentUser: StateFlow<Contact?> = _currentUser.asStateFlow()
+
     var userLat: Double? = null
     var userLng: Double? = null
 
+    // Tracks in-flight operations to prevent double-tap duplicate requests
+    private val _pendingConnections = mutableSetOf<String>()
+    private val _isAccepting = mutableSetOf<String>()
+
     init {
+        viewModelScope.launch {
+            chatDao.getChatPreviewsFlow().collect { localChats ->
+                _chats.value = localChats
+            }
+        }
         startRealTimePolling()
     }
 
@@ -57,14 +73,22 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
             // Initial full load
             refreshData(isBackgroundSync = false)
             
-            // Real-time polling for just Notifications and Chats
+            // Real-time polling for just Notifications, Reminders and Chats
             while (true) {
-                delay(2000) // Poll every 2 seconds for snappy Real-Time feel
+                delay(3000) // Poll every 3 seconds
                 try {
                     val n = repository.getNotifications()
+                    val r = repository.getReminders()
                     val ch = repository.getChats()
-                    _notifications.value = n
-                    _chats.value = ch
+                    // Merge reminders into notifications list for the reminders screen
+                    _notifications.value = (n + r).distinctBy { it.id }.sortedByDescending { it.isPastDue }
+                    if (ch.isNotEmpty()) {
+                        chatDao.insertChatPreviews(ch)
+                    }
+                    val myId = repository.getCurrentUserId()
+                    if (myId != null) {
+                        _currentUser.value = repository.getContactById(myId)
+                    }
                 } catch(e: Exception) {
                     e.printStackTrace()
                 }
@@ -82,13 +106,19 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
                     val cp = async { repository.getCompanies() }
                     val ev = async { repository.getEvents(userLat, userLng) }
                     val n = async { repository.getNotifications() }
+                    val myId = repository.getCurrentUserId()
                     
                     val fetchedChats = ch.await()
                     _contacts.value = c.await()
-                    _chats.value = fetchedChats
+                    if (fetchedChats.isNotEmpty()) {
+                        chatDao.insertChatPreviews(fetchedChats)
+                    }
                     _companies.value = cp.await()
                     _events.value = ev.await()
                     _notifications.value = n.await()
+                    if (myId != null) {
+                        _currentUser.value = repository.getContactById(myId)
+                    }
                     
                     val newStatuses = _connectionStatuses.value.toMutableMap()
                     fetchedChats.forEach { chat ->
@@ -100,7 +130,7 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
                 _errorMessage.value = null // Clear errors on success
             } catch (e: Exception) {
                 e.printStackTrace()
-                _errorMessage.value = "Network Error: Failed to sync with Mitron Cloud. Retrying..."
+                _errorMessage.value = "Network Error: Failed to sync with Connect Cloud. Retrying..."
             } finally {
                 if (!isBackgroundSync) _isLoading.value = false
             }
@@ -110,6 +140,8 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
     fun markNotificationRead(id: String) { viewModelScope.launch { repository.markNotificationRead(id); refreshData(true) } }
 
     fun connectWithContact(contactId: String) {
+        // Guard: ignore if already sending a request to this contact
+        if (!_pendingConnections.add(contactId)) return
         viewModelScope.launch {
             try {
                 val success = repository.sendConnectionRequest(contactId)
@@ -120,11 +152,18 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                // Keep "SENT" state but allow re-try only on failure
+                if (_connectionStatuses.value[contactId] != "SENT") {
+                    _pendingConnections.remove(contactId)
+                }
             }
         }
     }
 
     fun acceptConnectionRequest(notification: com.mitron.connect.data.model.AppNotification) {
+        // Guard: ignore if already processing this notification
+        if (!_isAccepting.add(notification.id)) return
         viewModelScope.launch {
             try {
                 if (notification.action_id != null) {
@@ -136,6 +175,8 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                _isAccepting.remove(notification.id)
             }
         }
     }

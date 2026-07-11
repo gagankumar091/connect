@@ -2,6 +2,7 @@ package com.mitron.connect.ui.screens.profile
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -11,6 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,8 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import androidx.compose.material.icons.outlined.*
 import com.mitron.connect.data.model.Contact
 import com.mitron.connect.ui.components.Avatar
+import com.mitron.connect.ui.components.toImageModel
 import com.mitron.connect.ui.components.ConnectPrimaryButton
 import com.mitron.connect.ui.components.ConnectTopBar
 import com.mitron.connect.ui.components.QrCode
@@ -35,17 +41,25 @@ import com.mitron.connect.ui.theme.ConnectTheme
 import com.mitron.connect.ui.theme.Spacing
 import com.mitron.connect.ui.theme.tints
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.CalendarContract
+import androidx.compose.ui.platform.LocalContext
+
 @Composable
 fun ProfileScreen(
     contactId: String,
     onBack: () -> Unit,
     onOpenTimeline: (String) -> Unit,
-    onOpenBusinessCard: (String) -> Unit,
     onEditProfile: () -> Unit,
     onLogout: () -> Unit,
-    viewModel: ProfileViewModel = viewModel(),
+    onOpenBusinessCard: (String) -> Unit,
+    onOpenRelationshipScore: (String) -> Unit = {},
+    onOpenChat: (String) -> Unit = {}
 ) {
+    val viewModel: ProfileViewModel = viewModel()
     val colors = ConnectTheme.colors
+    val context = LocalContext.current
 
     LaunchedEffect(contactId) {
         if (contactId == "my_card") viewModel.loadCurrentUser()
@@ -83,344 +97,370 @@ fun ProfileScreen(
     val (avatarBg, avatarFg) = currentContact.color.tints(colors)
 
     Scaffold(
-        topBar = {
-            ConnectTopBar(
-                title = currentContact.name,
-                onBack = onBack,
-                actions = {
-                    if (isCurrentUser) {
-                        IconButton(onClick = onEditProfile) {
-                            Icon(
-                                Icons.Filled.Edit,
-                                contentDescription = "Edit Profile",
-                                tint = colors.accent
-                            )
-                        }
-                        IconButton(onClick = onLogout) {
-                            Icon(
-                                Icons.Filled.ExitToApp,
-                                contentDescription = "Log out",
-                                tint = colors.danger
-                            )
-                        }
-                    } else {
-                        IconButton(onClick = { onOpenBusinessCard(currentContact.id) }) {
-                            Icon(
-                                Icons.Filled.IosShare,
-                                contentDescription = "Share profile",
-                                tint = colors.textSecondary
-                            )
-                        }
-                    }
-                },
-            )
-        },
-        containerColor = colors.surface1
+        containerColor = Color.White
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Profile Header
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                avatarBg.copy(alpha = 0.2f),
-                                colors.surface1
-                            )
-                        )
-                    )
-                    .padding(Spacing.lg),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    if (currentContact.avatarUrl != null) {
-                        AsyncImage(
-                            model = currentContact.avatarUrl,
-                            contentDescription = "Avatar",
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Avatar(
-                            initials = currentContact.initials ?: "",
-                            size = AvatarSize.large,
-                            background = avatarBg,
-                            foreground = avatarFg,
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(Spacing.md))
-                    Text(
-                        currentContact.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.textPrimary
-                    )
-                    Text(
-                        "${currentContact.title ?: ""} at ${currentContact.company ?: ""}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.textSecondary
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = colors.proBg
-                        ) {
-                            Text(
-                                "Score ${currentContact.score}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = colors.pro,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = colors.dangerBg
-                        ) {
-                            Text(
-                                "${currentContact.daysSinceContact}d since contact",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = colors.danger,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Contact Details Card
-            ProfileSection(colors.surface2) {
-                SectionTitle("Contact", Icons.Filled.Person)
-                Spacer(modifier = Modifier.height(8.dp))
-                ContactDetail(Icons.Filled.Email, currentContact.email ?: "—")
-                ContactDetail(Icons.Filled.Phone, currentContact.phone ?: "—")
-                ContactDetail(Icons.Filled.Link, currentContact.linkedin ?: "—")
-                if (currentContact.website != null) {
-                    ContactDetail(Icons.Filled.Language, currentContact.website!!)
-                }
-            }
-
-            // Interests & Mutuals
-            ProfileSection(colors.surface2) {
-                SectionTitle("Shared Interests", Icons.Filled.Favorite)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                    currentContact.sharedInterests.forEach { interest ->
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = colors.accentBg
-                        ) {
-                            Text(
-                                interest,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = colors.accent,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = colors.surface1
-                    ) {
-                        Text(
-                            "${currentContact.mutualsCount} mutuals",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = colors.textMuted,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            // Next Suggested Action
-            ProfileSection(colors.proBg) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.AutoAwesome,
-                        contentDescription = null,
-                        tint = colors.pro,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        "Next suggested action",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.pro
-                    )
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    currentContact.nextAction ?: "No suggestions yet.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.pro
-                )
-            }
-
-            // QR Code Section
-            ProfileSection(colors.surface2) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        "Scan to Connect",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.textPrimary
-                    )
-                    Text(
-                        "Share this QR with others to connect instantly.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary,
-                        modifier = Modifier.padding(bottom = Spacing.md)
-                    )
-                    val encodedName = android.net.Uri.encode(currentContact.name)
-                    val encodedEmail = android.net.Uri.encode(currentContact.email ?: "")
-                    val encodedTitle = android.net.Uri.encode(currentContact.title ?: "")
-                    val qrContent = "mitron://connect/${currentContact.id}?name=$encodedName&email=$encodedEmail&title=$encodedTitle"
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.White,
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        QrCode(
-                            content = qrContent,
-                            modifier = Modifier
-                                .fillMaxWidth(0.55f)
-                                .padding(8.dp)
-                        )
-                    }
-                }
-            }
-
-            // Action Buttons
+            // Header Navigation
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.md),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .statusBarsPadding(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ConnectPrimaryButton(
-                    text = "Message",
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedButton(
-                    onClick = { onOpenTimeline(currentContact.id) },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, colors.borderStrong),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.textPrimary)
-                ) {
+                IconButton(onClick = onBack) {
                     Icon(
-                        Icons.Filled.EditNote,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        Icons.Filled.ArrowBackIosNew,
+                        contentDescription = "Go back",
+                        tint = Color(0xFF1E293B)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Notes")
+                }
+                if (contactId == "my_card") {
+                    IconButton(onClick = onEditProfile) {
+                        Icon(
+                            Icons.Filled.Edit,
+                            contentDescription = "Edit profile",
+                            tint = Color(0xFF4B5563) // gray-600
+                        )
+                    }
+                } else {
+                    IconButton(onClick = { onOpenBusinessCard(currentContact.id) }) {
+                        Icon(
+                            Icons.Filled.IosShare,
+                            contentDescription = "Share profile",
+                            tint = Color(0xFF4B5563)
+                        )
+                    }
                 }
             }
-
-            // Logout Button (own profile only)
-            if (isCurrentUser) {
-                Spacer(modifier = Modifier.height(Spacing.sm))
-                OutlinedButton(
-                    onClick = onLogout,
+            
+            // Profile Identity
+            Box(modifier = Modifier.padding(top = 16.dp)) {
+                if (currentContact.avatarUrl != null) {
+                    AsyncImage(
+                        model = currentContact.avatarUrl.toImageModel(),
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .size(96.dp)
+                            .clip(CircleShape)
+                            .border(4.dp, Color.White, CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(modifier = Modifier.border(4.dp, Color.White, CircleShape).clip(CircleShape)) {
+                        Avatar(
+                            initials = currentContact.initials ?: "",
+                            size = AvatarSize.large, // Wait, AvatarSize.large might not be 96dp. I will wrap it.
+                            background = avatarBg,
+                            foreground = avatarFg,
+                            modifier = Modifier.size(96.dp)
+                        )
+                    }
+                }
+                // Online dot
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 4.dp, end = 4.dp)
+                        .size(20.dp)
+                        .background(Color(0xFF22C55E), CircleShape) // green-500
+                        .border(2.dp, Color.White, CircleShape)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Name
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                Text(
+                    currentContact.name,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF111827) // gray-900
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    Icons.Filled.Verified,
+                    contentDescription = "Verified",
+                    tint = Color(0xFF3B82F6), // blue-500
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            // Title & Company
+            if (!currentContact.title.isNullOrEmpty() || !currentContact.company.isNullOrEmpty()) {
+                if (!currentContact.title.isNullOrEmpty()) {
+                    Text(
+                        currentContact.title!!,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF6B7280) // gray-500
+                    )
+                }
+                if (!currentContact.company.isNullOrEmpty()) {
+                    Text(
+                        currentContact.company!!,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF2563EB) // blue-600
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Action Buttons Grid
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                val scope = rememberCoroutineScope()
+                if (isCurrentUser) {
+                    QuickActionButton(Icons.Filled.Edit, "Edit Profile", onClick = onEditProfile)
+                } else {
+                    QuickActionButton(Icons.Outlined.ChatBubbleOutline, "Message", onClick = { onOpenChat(currentContact.id) })
+                    QuickActionButton(Icons.Outlined.Call, "Audio Call", onClick = {
+                        scope.launch {
+                            try {
+                                val userId = com.mitron.connect.data.SessionManager.getUserId()
+                                if (userId == null) {
+                                    android.widget.Toast.makeText(context, "User ID not found", android.widget.Toast.LENGTH_SHORT).show()
+                                    return@launch
+                                }
+                                val res = com.mitron.connect.data.RetrofitClient.apiService.initiateCall(
+                                    com.mitron.connect.data.InitiateCallRequest(
+                                        callerId = userId,
+                                        receiverId = currentContact.id,
+                                        isVideo = false
+                                    )
+                                )
+                                if (res.success && res.token != null && res.channelName != null) {
+                                    com.mitron.connect.services.CallManager.joinCall(res.token, res.channelName, false)
+                                } else {
+                                    android.widget.Toast.makeText(context, "Failed to start call", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                android.widget.Toast.makeText(context, "Network error starting call", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    })
+                    QuickActionButton(Icons.Filled.Videocam, "Video Call", onClick = {
+                        scope.launch {
+                            try {
+                                val userId = com.mitron.connect.data.SessionManager.getUserId()
+                                if (userId == null) {
+                                    android.widget.Toast.makeText(context, "User ID not found", android.widget.Toast.LENGTH_SHORT).show()
+                                    return@launch
+                                }
+                                val res = com.mitron.connect.data.RetrofitClient.apiService.initiateCall(
+                                    com.mitron.connect.data.InitiateCallRequest(
+                                        callerId = userId,
+                                        receiverId = currentContact.id,
+                                        isVideo = true
+                                    )
+                                )
+                                if (res.success && res.token != null && res.channelName != null) {
+                                    com.mitron.connect.services.CallManager.joinCall(res.token, res.channelName, true)
+                                } else {
+                                    android.widget.Toast.makeText(context, "Failed to start video call", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                android.widget.Toast.makeText(context, "Network error starting video call", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    })
+                    QuickActionButton(Icons.Outlined.AutoAwesome, "AI Score", onClick = { onOpenRelationshipScore(currentContact.id) })
+                }
+                QuickActionButton(Icons.Outlined.Share, "Share", onClick = {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "Connect with ${currentContact.name}")
+                        putExtra(Intent.EXTRA_TEXT, "Connect with ${currentContact.name} on Mitron Connect App! Profile: mitron.app/u/${currentContact.username ?: currentContact.id}")
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share Profile"))
+                })
+                QuickActionButton(Icons.Outlined.MoreHoriz, "More", onClick = {
+                    android.widget.Toast.makeText(context, "More options coming soon!", android.widget.Toast.LENGTH_SHORT).show()
+                })
+            }
+            
+            Spacer(modifier = Modifier.height(40.dp))
+            
+            // About & Contact Details
+            val hasDetails = !currentContact.website.isNullOrEmpty() || currentContact.email.isNotEmpty() || !currentContact.phone.isNullOrEmpty()
+            if (hasDetails) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = Spacing.md),
-                    shape = RoundedCornerShape(12.dp),
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        "Contact Info",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827) // gray-900
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Contact Details List
+                    if (!currentContact.website.isNullOrEmpty()) {
+                        ContactDetailItem(Icons.Outlined.Language, currentContact.website!!, isLink = true)
+                    }
+                    if (currentContact.email.isNotEmpty()) {
+                        ContactDetailItem(Icons.Outlined.Email, currentContact.email, isLink = false)
+                    }
+                    if (!currentContact.phone.isNullOrEmpty()) {
+                        ContactDetailItem(Icons.Outlined.Phone, currentContact.phone!!, isLink = false)
+                    }
+                }
+                Spacer(modifier = Modifier.height(40.dp))
+            }
+            
+            // Bottom Action Cards (Schedule & Company)
+            if (contactId != "my_card") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Button(
+                        onClick = { 
+                            val intent = android.content.Intent(android.content.Intent.ACTION_INSERT).apply {
+                                data = android.provider.CalendarContract.Events.CONTENT_URI
+                                putExtra(android.provider.CalendarContract.Events.TITLE, "Meeting with ${currentContact.name}")
+                            }
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.weight(1f).height(64.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEEF2FF)), // indigo-50
+                        border = BorderStroke(1.dp, Color(0xFFE0E7FF)), // indigo-100
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Icon(Icons.Outlined.Event, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp)) // indigo-600
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Schedule\nMeeting", color = Color(0xFF4F46E5), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        }
+                    }
+                    Button(
+                        onClick = { 
+                            val url = currentContact.website?.let { 
+                                if (it.startsWith("http")) it else "https://$it"
+                            } ?: "https://google.com/search?q=${android.net.Uri.encode(currentContact.company)}"
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.weight(1f).height(64.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEEF2FF)), // indigo-50
+                        border = BorderStroke(1.dp, Color(0xFFE0E7FF)), // indigo-100
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Icon(Icons.Outlined.Business, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("View Company", color = Color(0xFF4F46E5), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+            
+            // Bottom Buttons
+            if (contactId == "my_card") {
+                // For 'my_card', show the logout button at the bottom (matching design)
+                OutlinedButton(
+                    onClick = onLogout,
+                    modifier = Modifier.fillMaxWidth(0.6f).height(48.dp),
+                    shape = RoundedCornerShape(24.dp),
                     border = BorderStroke(1.dp, colors.danger),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.danger)
                 ) {
-                    Icon(
-                        Icons.Filled.ExitToApp,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Icon(Icons.Filled.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Log out", fontWeight = FontWeight.Medium)
+                    Text("Log out", fontWeight = FontWeight.SemiBold)
                 }
-                Spacer(modifier = Modifier.height(Spacing.md))
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 }
 
 @Composable
-private fun ProfileSection(
-    backgroundColor: Color,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val colors = ConnectTheme.colors
-    Surface(
+private fun QuickActionButton(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.md),
-        shape = RoundedCornerShape(16.dp),
-        color = backgroundColor,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+            .width(64.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(4.dp)
     ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            content()
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color(0xFFEEF2FF), // indigo-50
+            modifier = Modifier.size(48.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = label, tint = Color(0xFF4F46E5), modifier = Modifier.size(24.dp)) // indigo-600
+            }
         }
-    }
-}
-
-@Composable
-private fun SectionTitle(text: String, icon: ImageVector) {
-    val colors = ConnectTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = colors.textMuted,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text,
-            style = MaterialTheme.typography.labelSmall,
-            color = colors.textMuted,
+            label.uppercase(),
+            fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
-            letterSpacing = 0.5.sp
+            color = Color(0xFF4B5563), // gray-600
+            letterSpacing = (-0.5).sp,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
     }
 }
 
 @Composable
-private fun ContactDetail(icon: ImageVector, text: String) {
-    val colors = ConnectTheme.colors
+private fun ContactDetailItem(icon: ImageVector, text: String, isLink: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 3.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = colors.textMuted,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(Color(0xFFF3F4F6), RoundedCornerShape(8.dp)), // gray-100
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = Color(0xFF6B7280), // gray-500
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
             text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.textPrimary
+            fontSize = 14.sp,
+            color = if (isLink) Color(0xFF2563EB) else Color(0xFF374151), // blue-600 or gray-700
+            fontWeight = if (isLink) FontWeight.Normal else FontWeight.Normal
         )
     }
 }

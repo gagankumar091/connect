@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     id("com.google.gms.google-services")
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
 }
 
 android {
@@ -16,6 +17,11 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+        
+        // Strip unused architectures from heavy SDKs (like Agora) to massively reduce APK size
+        ndk {
+            abiFilters.add("arm64-v8a")
+        }
     }
 
     buildTypes {
@@ -55,12 +61,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
 
     // Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     // Firebase Auth and Firestore
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-storage")
-    implementation("com.google.firebase:firebase-messaging")
     implementation("io.coil-kt:coil-compose:2.6.0")
     // QR Code generation
     implementation("com.google.zxing:core:3.5.3")
@@ -72,8 +73,24 @@ dependencies {
     // OkHttp for Ollama API
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp-sse:4.12.0")
+    // Agora RTC Calling
+    implementation("io.agora.rtc:full-sdk:4.2.6")
     
     // Retrofit for Vercel Backend
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+
+    // Room
+    val room_version = "2.6.1"
+    implementation("androidx.room:room-runtime:$room_version")
+    implementation("androidx.room:room-ktx:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
+    
+    // Social Login
+    implementation("androidx.browser:browser:1.8.0")
+    implementation("androidx.credentials:credentials:1.3.0-alpha01")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0-alpha01")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 }
+

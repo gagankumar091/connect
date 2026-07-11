@@ -9,14 +9,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -25,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mitron.connect.data.model.ChatPreview
 import com.mitron.connect.ui.components.Avatar
-import com.mitron.connect.ui.components.ShimmerEffect
 import com.mitron.connect.ui.theme.AvatarSize
 import com.mitron.connect.ui.theme.ConnectTheme
 import com.mitron.connect.ui.theme.Spacing
@@ -44,13 +41,14 @@ fun ChatsTabContent(
             .fillMaxSize()
             .background(colors.surface1)
     ) {
-        // Search bar
+        // ── Search bar ─────────────────────────────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Spacing.md, vertical = Spacing.sm)
+                .padding(horizontal = Spacing.md, vertical = Spacing.xs)
+                .clip(RoundedCornerShape(28.dp))
+                .background(colors.surface2)
                 .clickable(onClick = onOpenSearch)
-                .background(colors.surface2, RoundedCornerShape(28.dp))
                 .padding(horizontal = 18.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -62,49 +60,60 @@ fun ChatsTabContent(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                "Search people, companies, chats...",
+                "Search...",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.textMuted
             )
         }
 
         if (chats.isEmpty()) {
-            // Empty state with illustration
+            // Empty state
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Filled.Chat,
-                        contentDescription = null,
-                        tint = colors.textMuted.copy(alpha = 0.4f),
-                        modifier = Modifier.size(72.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(96.dp)
+                            .background(colors.accentBg, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.Forum,
+                            contentDescription = null,
+                            tint = colors.fillPrimary,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.height(Spacing.md))
                     Text(
                         "No conversations yet",
                         style = MaterialTheme.typography.titleMedium,
-                        color = colors.textMuted,
-                        fontWeight = FontWeight.Medium
+                        color = colors.textPrimary,
+                        fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Connect with people to start chatting",
+                        "Connect with people in the People tab\nto start chatting",
                         style = MaterialTheme.typography.bodySmall,
-                        color = colors.textMuted.copy(alpha = 0.7f)
+                        color = colors.textMuted,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = Spacing.md, vertical = 4.dp)
+                contentPadding = PaddingValues(vertical = 4.dp)
             ) {
                 items(chats, key = { it.id }) { chat ->
-                    ChatRow(
-                        chat = chat,
-                        onClick = { onOpenChat(chat.id) }
+                    ChatRow(chat = chat, onClick = { onOpenChat(chat.id) })
+                    // Divider aligned to text — WhatsApp style
+                    Divider(
+                        color = colors.border,
+                        thickness = 0.5.dp,
+                        modifier = Modifier.padding(start = 82.dp)
                     )
                 }
             }
@@ -118,98 +127,95 @@ private fun ChatRow(chat: ChatPreview, onClick: () -> Unit) {
     val (avatarBg, avatarFg) = chat.color.tints(colors)
     val hasUnread = chat.unreadCount > 0
 
-    Surface(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        color = if (hasUnread) colors.accentBg.copy(alpha = 0.3f) else Color.Transparent,
-        shadowElevation = 0.dp
+            .clickable(onClick = onClick)
+            .background(if (hasUnread) colors.accentBg.copy(alpha = 0.06f) else Color.Transparent)
+            .padding(horizontal = Spacing.md, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Avatar with online indicator
-            Box {
-                Avatar(
-                    initials = chat.initials,
-                    size = AvatarSize.medium,
-                    background = avatarBg,
-                    foreground = avatarFg,
+        // Avatar with online dot
+        Box {
+            Avatar(
+                initials = chat.initials,
+                size = AvatarSize.medium + 4.dp,
+                background = avatarBg,
+                foreground = avatarFg,
+            )
+            // Active indicator
+            Box(
+                modifier = Modifier
+                    .size(13.dp)
+                    .background(colors.success, CircleShape)
+                    .align(Alignment.BottomEnd)
+                    .clip(CircleShape)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    chat.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (hasUnread) FontWeight.Bold else FontWeight.Normal,
+                    color = colors.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
-                if (hasUnread) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(colors.pro)
-                            .align(Alignment.BottomEnd)
-                            .offset(x = 2.dp, y = 2.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    chat.formattedTime,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (hasUnread) colors.fillPrimary else colors.textMuted,
+                    fontSize = 12.sp
+                )
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        chat.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = if (hasUnread) FontWeight.SemiBold else FontWeight.Normal,
-                        color = colors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Sent tick for last message
+                Icon(
+                    imageVector = Icons.Filled.DoneAll,
+                    contentDescription = null,
+                    tint = colors.fillPrimary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    chat.lastMessage.ifEmpty { "No messages yet" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (hasUnread) colors.textPrimary else colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                if (hasUnread) {
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        chat.formattedTime,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (hasUnread) colors.accent else colors.textMuted,
-                        fontSize = 11.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        chat.lastMessage.ifEmpty { "No messages yet" },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (hasUnread) colors.textPrimary else colors.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (hasUnread) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Surface(
-                            shape = CircleShape,
-                            color = colors.pro,
-                            modifier = Modifier.size(22.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = if (chat.unreadCount > 9) "9+" else chat.unreadCount.toString(),
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .background(colors.fillPrimary, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (chat.unreadCount > 9) "9+" else chat.unreadCount.toString(),
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }

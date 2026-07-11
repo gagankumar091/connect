@@ -1,11 +1,15 @@
 package com.mitron.connect.data.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.Date
 
+@Entity(tableName = "chat_messages")
 @Serializable
 data class ChatMessage(
+    @PrimaryKey
     var id: String = "",
 
     @SerialName("chat_id")
@@ -13,6 +17,9 @@ data class ChatMessage(
 
     @SerialName("content")
     var text: String = "",
+
+    @SerialName("sender_id")
+    var senderId: String = "",
 
     @SerialName("from_user")
     var fromUser: Boolean = true,

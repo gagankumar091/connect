@@ -31,6 +31,12 @@ interface MitronApiService {
     @GET("api/timeline/{contactId}")
     suspend fun getTimelineEvents(@Path("contactId") contactId: String): List<TimelineEvent>
 
+    @POST("api/timeline")
+    suspend fun addTimelineEvent(@Body event: TimelineEvent): ApiResponse
+
+    @POST("api/meeting-summaries")
+    suspend fun addMeetingSummary(@Body summary: com.mitron.connect.data.model.MeetingSummary): ApiResponse
+
     @GET("api/notifications/{userId}")
     suspend fun getNotifications(@Path("userId") userId: String): List<com.mitron.connect.data.model.AppNotification>
 
@@ -78,13 +84,48 @@ interface MitronApiService {
 
     @retrofit2.http.PUT("api/users/{id}")
     suspend fun updateUserProfile(@Path("id") id: String, @Body request: UpdateProfileRequest): ApiResponse
+
+    // ---- New endpoints ----
+
+    @GET("api/events/{id}")
+    suspend fun getEventById(@Path("id") id: String): Event
+
+    @POST("api/events/{id}/attend")
+    suspend fun attendEvent(@Path("id") id: String, @Body request: AttendEventRequest): ApiResponse
+
+    @GET("api/companies/{id}")
+    suspend fun getCompanyById(@Path("id") id: String): Company
+
+    @POST("api/companies/create")
+    suspend fun createCompany(@Body request: CreateCompanyRequest): ApiResponse
+
+    @GET("api/users/by-company")
+    suspend fun getUsersByCompany(@retrofit2.http.Query("company") company: String): List<Contact>
+
+    @GET("api/reminders/{userId}")
+    suspend fun getReminders(@Path("userId") userId: String): List<com.mitron.connect.data.model.AppNotification>
+
+    @POST("api/reminders")
+    suspend fun createReminder(@Body request: CreateReminderRequest): ApiResponse
+
+    @GET("api/score/{contactId}")
+    suspend fun getRelationshipScore(
+        @Path("contactId") contactId: String,
+        @retrofit2.http.Query("userId") userId: String
+    ): RelationshipScoreResponse
+
+    @POST("api/calls/initiate")
+    suspend fun initiateCall(@Body request: InitiateCallRequest): CallInitiatedResponse
+
+    @POST("api/calls/token")
+    suspend fun generateToken(@Body request: TokenRequest): TokenResponse
 }
 
 
 @kotlinx.serialization.Serializable
 data class LoginRequest(val usernameOrEmail: String, val password: String)
 @kotlinx.serialization.Serializable
-data class RegisterRequest(val username: String, val password: String, val name: String, val email: String)
+data class RegisterRequest(val username: String, val password: String, val name: String, val email: String, val phone: String? = null)
 @kotlinx.serialization.Serializable
 data class AuthResponse(val success: Boolean, val message: String? = null, val userId: String? = null)
 
@@ -96,7 +137,7 @@ data class ConnectionRequestDto(val senderId: String, val receiverId: String)
 @kotlinx.serialization.Serializable
 data class SendMessageRequest(val senderId: String, val text: String)
 @kotlinx.serialization.Serializable
-data class UpdateProfileRequest(val username: String, val email: String, val name: String, val title: String, val company: String, val linkedin: String, val website: String, @kotlinx.serialization.SerialName("avatar_url") val avatarUrl: String? = null)
+data class UpdateProfileRequest(val username: String, val email: String, val name: String, val title: String, val company: String, val linkedin: String, val website: String, @kotlinx.serialization.SerialName("avatar_url") val avatarUrl: String? = null, val phone: String? = null)
 
 @kotlinx.serialization.Serializable
 data class MarkMessagesReadRequest(val chatId: String, val userId: String)
@@ -106,6 +147,70 @@ data class FcmTokenRequest(val userId: String, val token: String)
 
 @kotlinx.serialization.Serializable
 data class ApiResponse(val success: Boolean, val message: String? = null)
+
+@kotlinx.serialization.Serializable
+data class AttendEventRequest(val userId: String)
+
+@kotlinx.serialization.Serializable
+data class CreateCompanyRequest(
+    val name: String,
+    val descriptor: String? = null,
+    val employees: Int? = null,
+    @kotlinx.serialization.SerialName("avatar_url") val avatarUrl: String? = null,
+    val website: String? = null,
+    val description: String? = null,
+    val industry: String? = null,
+    val founded: String? = null,
+    val headquarters: String? = null,
+    @kotlinx.serialization.SerialName("employee_range") val employeeRange: String? = null,
+    val funding: String? = null
+)
+
+@kotlinx.serialization.Serializable
+data class CreateReminderRequest(
+    val userId: String,
+    val title: String,
+    val description: String? = null,
+    val actionId: String? = null,
+    val dueDate: String? = null
+)
+
+@kotlinx.serialization.Serializable
+data class RelationshipScoreResponse(
+    val score: Int = 0,
+    val daysSinceContact: Int = 0,
+    val strength: String = "Weak",
+    val lastSpokeLabel: String = ""
+)
+
+@kotlinx.serialization.Serializable
+data class InitiateCallRequest(
+    val callerId: String,
+    val receiverId: String,
+    val isVideo: Boolean
+)
+
+@kotlinx.serialization.Serializable
+data class CallInitiatedResponse(
+    val success: Boolean,
+    val channelName: String? = null,
+    val token: String? = null,
+    val error: String? = null
+)
+
+@kotlinx.serialization.Serializable
+data class TokenRequest(
+    val channelName: String,
+    val uid: Int,
+    val role: String
+)
+
+@kotlinx.serialization.Serializable
+data class TokenResponse(
+    val success: Boolean,
+    val token: String? = null,
+    val error: String? = null
+)
 
 object RetrofitClient {
     private const val BASE_URL = "https://connect-mitron.vercel.app/"

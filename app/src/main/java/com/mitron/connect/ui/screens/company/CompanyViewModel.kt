@@ -30,7 +30,8 @@ class CompanyViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                _company.value = repository.getCompanyById(companyId)
+                // Use direct endpoint — fetches single company row, much faster
+                _company.value = repository.getCompanyByIdDirect(companyId)
                 _contacts.value = repository.getContactsByCompany(companyId)
             } catch (e: Exception) {
                 e.printStackTrace()

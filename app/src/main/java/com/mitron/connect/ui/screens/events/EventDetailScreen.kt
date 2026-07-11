@@ -1,43 +1,32 @@
 package com.mitron.connect.ui.screens.events
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.mitron.connect.data.model.Contact
 import com.mitron.connect.ui.components.Avatar
-import com.mitron.connect.ui.components.ConnectCard
-import com.mitron.connect.ui.components.ConnectSecondaryButton
-import com.mitron.connect.ui.components.ConnectTopBar
 import com.mitron.connect.ui.theme.AvatarSize
-import com.mitron.connect.ui.theme.ConnectTheme
-import com.mitron.connect.ui.theme.Spacing
 
 @Composable
 fun EventDetailScreen(
@@ -46,110 +35,170 @@ fun EventDetailScreen(
     onOpenProfile: (String) -> Unit = {},
     viewModel: EventDetailViewModel = viewModel()
 ) {
-    val colors = ConnectTheme.colors
-    
     LaunchedEffect(eventId) {
         viewModel.loadEvent(eventId)
     }
     
     val event by viewModel.event.collectAsState()
     val attendees by viewModel.attendees.collectAsState()
-    val connectionStatuses by viewModel.connectionStatuses.collectAsState()
-    
+
     if (event == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Color(0xFF2563EB))
+        }
         return
     }
 
-    Scaffold(topBar = { ConnectTopBar(title = "Event Details", onBack = onBack) }) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.padding(innerPadding).padding(Spacing.md).fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.size(54.dp).background(colors.surface2, RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Filled.Event, contentDescription = null, tint = colors.fillPrimary, modifier = Modifier.size(28.dp))
-                    }
-                    Column(modifier = Modifier.padding(start = Spacing.sm)) {
-                        Text(event!!.title, style = MaterialTheme.typography.titleLarge, color = colors.textPrimary)
-                    }
-                }
-            }
-
-            item {
-                ConnectCard(modifier = Modifier.padding(top = Spacing.xs)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                        if (!event!!.date.isNullOrEmpty()) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Schedule, contentDescription = null, tint = colors.textMuted, modifier = Modifier.size(16.dp))
-                                Text(event!!.date!!, style = MaterialTheme.typography.bodyMedium, color = colors.textSecondary, modifier = Modifier.padding(start = Spacing.xs))
-                            }
+    Scaffold(
+        containerColor = Color(0xFFF8F9FB),
+        topBar = {
+            Column(modifier = Modifier.background(Color.White)) {
+                Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Row(verticalAlignment = Alignment.Top) {
+                        IconButton(onClick = onBack, modifier = Modifier.size(24.dp).padding(top = 4.dp, end = 8.dp)) {
+                            Icon(Icons.Filled.ArrowBackIosNew, contentDescription = "Back", tint = Color.Black, modifier = Modifier.size(18.dp))
                         }
-                        if (!event!!.location.isNullOrEmpty()) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.LocationOn, contentDescription = null, tint = colors.textMuted, modifier = Modifier.size(16.dp))
-                                Text(event!!.location!!, style = MaterialTheme.typography.bodyMedium, color = colors.textSecondary, modifier = Modifier.padding(start = Spacing.xs))
-                            }
+                        Column {
+                            Text(event!!.title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                            Text(event!!.location ?: "Location Unknown", fontSize = 12.sp, color = Color(0xFF6B7280))
                         }
                     }
+                    Text("Change Event", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB), modifier = Modifier.clickable { onBack() })
+                }
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Nearby (${attendees.size})", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), modifier = Modifier.padding(bottom = 12.dp))
+                        Box(modifier = Modifier.height(2.dp).width(80.dp).background(Color(0xFF2563EB)))
+                    }
+                    Text("People", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF6B7280), modifier = Modifier.padding(bottom = 12.dp))
+                    Text("Groups", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF6B7280), modifier = Modifier.padding(bottom = 12.dp))
+                }
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF3F4F6)))
+            }
+        },
+        bottomBar = {
+            Surface(
+                color = Color.White,
+                shadowElevation = 16.dp,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    EventBottomNavIcon(Icons.Filled.ChatBubbleOutline, "Chats", Color(0xFF9CA3AF))
+                    EventBottomNavIcon(Icons.Outlined.Call, "Calls", Color(0xFF9CA3AF))
+                    
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .offset(y = (-16).dp)
+                                .size(48.dp)
+                                .background(Color(0xFF2563EB), CircleShape)
+                                .border(4.dp, Color.White, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.LocationOn, contentDescription = "Discover", tint = Color.White, modifier = Modifier.size(24.dp))
+                        }
+                        Text("Discover", fontSize = 10.sp, color = Color(0xFF2563EB), modifier = Modifier.offset(y = (-8).dp))
+                    }
+                    
+                    EventBottomNavIcon(Icons.Outlined.Event, "Events", Color(0xFF9CA3AF))
+                    EventBottomNavIcon(Icons.Outlined.AutoAwesome, "AI", Color(0xFF9CA3AF))
                 }
             }
-
-            if (!event!!.description.isNullOrEmpty()) {
-                item {
-                    Text("Description", style = MaterialTheme.typography.titleMedium, color = colors.textPrimary, modifier = Modifier.padding(top = Spacing.sm))
-                    Text(event!!.description!!, style = MaterialTheme.typography.bodyMedium, color = colors.textSecondary)
+        }
+    ) { innerPadding ->
+        if (attendees.isEmpty()) {
+            Box(
+                modifier = Modifier.padding(innerPadding).fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("No attendees yet", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Be the first to join this event!", fontSize = 14.sp, color = Color(0xFF9CA3AF))
                 }
             }
-
-            item {
-                Text("People Attending", style = MaterialTheme.typography.titleMedium, color = colors.textPrimary, modifier = Modifier.padding(top = Spacing.md, bottom = Spacing.xs))
-            }
-
-            items(attendees) { contact ->
-                EventAttendeeRow(
-                    contact = contact,
-                    status = connectionStatuses[contact.id],
-                    onConnect = { viewModel.connectWithContact(contact.id) },
-                    onProfile = { onOpenProfile(contact.id) }
-                )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(vertical = 20.dp)
+            ) {
+                items(attendees) { contact ->
+                    EventAttendeeRow(
+                        contact = contact,
+                        onClick = { onOpenProfile(contact.id) }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EventAttendeeRow(contact: Contact, status: String?, onConnect: () -> Unit, onProfile: () -> Unit) {
-    val colors = ConnectTheme.colors
-    ConnectCard(modifier = Modifier.clickable(onClick = onProfile)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
-        ) {
-            Avatar(initials = contact.initials, size = AvatarSize.small)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(contact.name, style = MaterialTheme.typography.titleSmall, color = colors.textPrimary)
-                Text(contact.title ?: "Mitron User", style = MaterialTheme.typography.bodySmall, color = colors.textMuted)
-            }
-            if (status == "SENT") {
-                ConnectSecondaryButton(
-                    text = "Sent",
-                    compact = true,
-                    modifier = Modifier.width(80.dp),
-                    onClick = { }
+fun EventBottomNavIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable {  }) {
+        Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(label, fontSize = 10.sp, color = color)
+    }
+}
+
+@Composable
+private fun EventAttendeeRow(contact: Contact, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (!contact.avatarUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = contact.avatarUrl,
+                    contentDescription = contact.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(48.dp).clip(CircleShape)
                 )
             } else {
-                ConnectSecondaryButton(
-                    text = "Connect",
-                    compact = true,
-                    modifier = Modifier.width(80.dp),
-                    onClick = onConnect
-                )
+                Avatar(initials = contact.initials, size = AvatarSize.small)
             }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(contact.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                Text(contact.title ?: "Mitron User", fontSize = 12.sp, color = Color(0xFF6B7280))
+            }
+        }
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(Color(0xFFDCFCE7), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(modifier = Modifier.size(8.dp).background(Color(0xFF22C55E), CircleShape))
         }
     }
 }

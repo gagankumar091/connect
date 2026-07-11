@@ -22,7 +22,11 @@ class ProfileViewModel(
     private val _isCurrentUser = MutableStateFlow(false)
     val isCurrentUser: StateFlow<Boolean> = _isCurrentUser.asStateFlow()
 
+    private var currentContactId: String? = null
+    private var pollingJob: kotlinx.coroutines.Job? = null
+
     fun loadContact(contactId: String) {
+        currentContactId = contactId
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -34,9 +38,11 @@ class ProfileViewModel(
                 _isLoading.value = false
             }
         }
+        startPolling(contactId)
     }
 
     fun loadCurrentUser() {
+        currentContactId = "my_card"
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -51,5 +57,32 @@ class ProfileViewModel(
                 _isLoading.value = false
             }
         }
+        startPolling("my_card")
+    }
+    
+    private fun startPolling(contactId: String) {
+        pollingJob?.cancel()
+        pollingJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(2000)
+                try {
+                    if (contactId == "my_card") {
+                        val currentId = repository.getCurrentUserId()
+                        if (currentId != null) {
+                            _contact.value = repository.getContactById(currentId)
+                        }
+                    } else {
+                        _contact.value = repository.getContactById(contactId)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        pollingJob?.cancel()
     }
 }

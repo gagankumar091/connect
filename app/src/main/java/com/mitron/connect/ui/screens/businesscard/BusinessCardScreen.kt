@@ -87,110 +87,50 @@ fun BusinessCardScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            // Ambient glowing orbs behind the glass card
-            Box(
-                modifier = Modifier
-                    .size(250.dp)
-                    .align(Alignment.TopStart)
-                    .offset(x = (-50).dp, y = 50.dp)
-                    .background(Color(0xFF4F46E5).copy(alpha = 0.3f), CircleShape)
-                    .blur(100.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 30.dp, y = (-100).dp)
-                    .background(Color(0xFFEC4899).copy(alpha = 0.3f), CircleShape)
-                    .blur(100.dp)
-            )
-
-            // Glassmorphism Card
             Column(
                 modifier = Modifier
-                    .padding(Spacing.lg)
-                    .fillMaxWidth()
-                    .align(Alignment.Center)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.15f),
-                                Color.White.copy(alpha = 0.05f)
-                            )
-                        )
-                    )
-                    .border(
-                        width = 1.dp,
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.4f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = RoundedCornerShape(24.dp)
-                    )
+                    .fillMaxSize()
                     .padding(Spacing.xl),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
                 if (contact == null) {
-                    // Shimmer Loading State
-                    ShimmerEffect(modifier = Modifier.size(80.dp).clip(CircleShape))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ShimmerEffect(modifier = Modifier.height(24.dp).width(150.dp).clip(RoundedCornerShape(8.dp)))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ShimmerEffect(modifier = Modifier.height(16.dp).width(200.dp).clip(RoundedCornerShape(8.dp)))
-                    Spacer(modifier = Modifier.height(32.dp))
-                    ShimmerEffect(modifier = Modifier.size(196.dp).clip(RoundedCornerShape(14.dp)))
+                    ShimmerEffect(modifier = Modifier.size(250.dp).clip(RoundedCornerShape(16.dp)))
                 } else {
-                    // Actual Content
-                    Avatar(
-                        initials = contact.initials,
-                        size = AvatarSize.large,
-                        background = colors.accentBg,
-                        foreground = colors.accent,
+                    Text(
+                        text = "Scan to Connect",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = colors.textPrimary,
+                        modifier = Modifier.padding(bottom = Spacing.xl)
                     )
+                    
+                    Box(
+                        modifier = Modifier
+                            .size(280.dp)
+                            .background(Color.White, RoundedCornerShape(24.dp))
+                            .border(2.dp, colors.accent.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        QrCode(
+                            content = "mitron://connect/${contact.id}",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(Spacing.xl))
+                    
                     Text(
                         text = contact.name,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         color = colors.textPrimary,
-                        modifier = Modifier.padding(top = Spacing.md),
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     )
                     Text(
                         text = "${contact.title}, ${contact.company}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.textMuted,
                     )
-                    Box(
-                        modifier = Modifier
-                            .padding(vertical = Spacing.xl)
-                            .size(200.dp)
-                            .background(Color.White, RoundedCornerShape(16.dp))
-                            .border(2.dp, colors.accent.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        QrCode(
-                            content = "mitron://connect/${contact.id}",
-                            modifier = Modifier.fillMaxSize().padding(12.dp)
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        if (contact.website?.isNotBlank() == true) Tag(text = "Website", style = TagStyle.NEUTRAL)
-                        if (contact.linkedin?.isNotBlank() == true) Tag(text = "LinkedIn", style = TagStyle.NEUTRAL)
-                    }
-
-                    if (isCurrentUser) {
-                        Spacer(modifier = Modifier.height(Spacing.lg))
-                        OutlinedButton(
-                            onClick = onLogout,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.danger),
-                            border = BorderStroke(1.dp, colors.danger)
-                        ) {
-                            Icon(Icons.Filled.ExitToApp, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("Log out", color = colors.danger)
-                        }
-                    }
                 }
             }
         }

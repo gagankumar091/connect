@@ -8,8 +8,10 @@ object SessionManager {
     private const val KEY_USER_ID = "USER_ID"
     
     private lateinit var prefs: SharedPreferences
+    lateinit var appContext: Context
     
     fun init(context: Context) {
+        appContext = context.applicationContext
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
     

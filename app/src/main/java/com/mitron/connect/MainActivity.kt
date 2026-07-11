@@ -18,7 +18,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        com.mitron.connect.services.CallManager.initAgora(this)
         com.mitron.connect.data.SessionManager.init(this)
+        if (com.mitron.connect.data.SessionManager.getUserId() != null) {
+            val intent = android.content.Intent(this, com.mitron.connect.services.MitronSyncService::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        }
         enableEdgeToEdge()
         setContent {
             ConnectAppTheme {
@@ -26,7 +35,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize().safeDrawingPadding(),
                     color = ConnectTheme.colors.surface1
                 ) {
-                    ConnectNavGraph()
+                    androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
+                        ConnectNavGraph()
+                        
+                        // Floating Call UI
+                        com.mitron.connect.ui.screens.calls.IncomingCallBanner()
+                        com.mitron.connect.ui.screens.calls.ActiveCallScreen()
+                    }
                 }
             }
         }
@@ -35,5 +50,10 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         NotificationHelper.cancelAllNotifications(this)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        com.mitron.connect.services.CallManager.destroy()
     }
 }
