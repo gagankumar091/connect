@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,6 +17,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.drawBehind
 import com.mitron.connect.data.model.Contact
 import com.mitron.connect.ui.components.Avatar
 import com.mitron.connect.ui.components.ConnectSecondaryButton
@@ -25,6 +30,8 @@ import com.mitron.connect.ui.theme.AvatarSize
 import com.mitron.connect.ui.theme.ConnectTheme
 import com.mitron.connect.ui.theme.Spacing
 import com.mitron.connect.ui.theme.tints
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.drawBehind
 
 @Composable
 fun PeopleTabContent(
@@ -37,24 +44,55 @@ fun PeopleTabContent(
     onOpenChat: (String) -> Unit
 ) {
     val colors = ConnectTheme.colors
-
-    LazyColumn(
-        modifier = modifier.fillMaxSize().background(colors.surface1),
-        verticalArrangement = Arrangement.Top,
-        contentPadding = PaddingValues(vertical = 4.dp)
-    ) {
-        item {
-            if (hasLocationPermission) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md, vertical = Spacing.sm),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Discover people near you", style = MaterialTheme.typography.bodySmall, color = colors.textMuted)
-                }
+    var searchQuery by remember { mutableStateOf("") }
+    
+    val filteredContacts by remember {
+        derivedStateOf {
+            if (searchQuery.isBlank()) contacts else contacts.filter { 
+                it.name.contains(searchQuery, ignoreCase = true) || 
+                (it.company?.contains(searchQuery, ignoreCase = true) == true) 
             }
         }
+    }
 
-        if (contacts.isEmpty()) {
+    Column(modifier = modifier.fillMaxSize().background(colors.surface1)) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search connections...") },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            shape = RoundedCornerShape(24.dp),
+            singleLine = true,
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Clear, contentDescription = "Clear") }
+                }
+            }
+        )
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
+            contentPadding = PaddingValues(bottom = 80.dp)
+        ) {
+            item {
+                if (hasLocationPermission) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Discover people near you", style = MaterialTheme.typography.bodySmall, color = colors.textMuted)
+                    }
+                }
+            }
+
+        if (filteredContacts.isEmpty() && searchQuery.isNotEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text("No results found.", color = colors.textMuted)
+                }
+            }
+        } else if (contacts.isEmpty()) {
             items(5) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md, vertical = 10.dp),
@@ -70,7 +108,7 @@ fun PeopleTabContent(
                 }
             }
         } else {
-            items(contacts) { contact -> 
+            items(filteredContacts) { contact -> 
                 PersonRow(
                     contact = contact, 
                     status = connectionStatuses[contact.id],
@@ -88,6 +126,7 @@ fun PeopleTabContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PersonRow(
     contact: Contact, 
@@ -98,14 +137,44 @@ private fun PersonRow(
 ) {
     val colors = ConnectTheme.colors
     val (bg, fg) = contact.color.tints(colors)
+    val dismissState = rememberSwipeToDismissBoxState()
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = Spacing.md, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val direction = dismissState.dismissDirection
+            val color by animateColorAsState(
+                when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> Color(0xFF10B981)
+                    SwipeToDismissBoxValue.EndToStart -> Color(0xFF3B82F6)
+                    else -> Color.Transparent
+                }
+            )
+            val icon = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> Icons.Default.Call
+                SwipeToDismissBoxValue.EndToStart -> Icons.Default.Message
+                else -> Icons.Default.Circle
+            }
+            val alignment = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                else -> Alignment.CenterEnd
+            }
+            Box(
+                modifier = Modifier.fillMaxSize().background(color, RoundedCornerShape(12.dp)).padding(horizontal = 20.dp),
+                contentAlignment = alignment
+            ) {
+                Icon(icon, contentDescription = null, tint = Color.White)
+            }
+        }
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .background(Color.White, RoundedCornerShape(12.dp))
+                .padding(horizontal = Spacing.md, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
         Avatar(
             initials = contact.initials, 
             size = AvatarSize.medium + 4.dp, 
@@ -143,27 +212,37 @@ private fun PersonRow(
                 modifier = Modifier.width(86.dp),
                 onClick = onChat
             )
-        } else if (status == "SENT") {
-            Button(
-                onClick = {}, 
-                enabled = false,
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.width(86.dp).height(32.dp),
-                colors = ButtonDefaults.buttonColors(disabledContainerColor = colors.surface2, disabledContentColor = colors.textMuted)
-            ) {
-                Text("Pending", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-            }
         } else {
+            val isPending = status == "SENT"
+            val infiniteTransition = rememberInfiniteTransition()
+            val rotation by infiniteTransition.animateFloat(
+                initialValue = 0f, targetValue = if (isPending) 360f else 0f,
+                animationSpec = infiniteRepeatable(animation = tween(1000, easing = LinearEasing)),
+                label = "loading"
+            )
+            
             Button(
-                onClick = onConnect,
+                onClick = { if (!isPending) onConnect() }, 
+                enabled = true,
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.width(86.dp).height(32.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colors.fillPrimary, contentColor = Color.White)
+                modifier = Modifier.width(96.dp).height(32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isPending) colors.surface2 else colors.fillPrimary,
+                    contentColor = if (isPending) colors.textMuted else Color.White
+                )
             ) {
-                Text("Connect", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                if (isPending) {
+                    Icon(Icons.Default.HourglassTop, contentDescription = null, modifier = Modifier.size(16.dp).rotate(rotation))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Pending", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                } else {
+                    Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Connect", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
+    }
     }
 }

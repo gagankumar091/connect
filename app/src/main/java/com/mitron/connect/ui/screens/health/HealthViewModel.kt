@@ -39,33 +39,36 @@ class HealthViewModel(private val repository: VercelRepository = VercelRepositor
     val suggestedActions: StateFlow<String> = _suggestedActions.asStateFlow()
 
     private val client = OkHttpClient.Builder().connectTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build()
-    private val ollamaUrl = "http://51.79.143.65:11434/api/chat"
+    private val ollamaUrl = "${com.mitron.connect.BuildConfig.AI_BASE_URL}api/ai/chat"
 
     init {
-        loadData()
+        viewModelScope.launch {
+            while (true) {
+                loadData()
+                kotlinx.coroutines.delay(5000)
+            }
+        }
     }
 
-    private fun loadData() {
-        viewModelScope.launch {
-            try {
-                val contacts = repository.getContacts()
-                val chats = repository.getChats()
-                
-                val avg = if (contacts.isNotEmpty()) contacts.map { it.score }.average().toInt() else 0
-                _avgScore.value = avg.toString()
-                
-                val overdueCount = chats.count { it.overdue }
-                _overdue.value = overdueCount.toString()
-                
-                val contextStr = "Average relationship score is $avg out of 100. Overdue follow-up chats: $overdueCount."
-                val prompt = "Based on this live relationship data: $contextStr. Write exactly one short, motivating sentence suggesting what the user should do next to improve their network."
-                
-                val aiResponse = sendOllamaRequest(prompt)
-                _suggestedActions.value = aiResponse.trim()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _suggestedActions.value = "Connect with more people to generate insights."
-            }
+    private suspend fun loadData() {
+        try {
+            val contacts = repository.getContacts()
+            val chats = repository.getChats()
+            
+            val avg = if (contacts.isNotEmpty()) contacts.map { it.score }.average().toInt() else 0
+            _avgScore.value = avg.toString()
+            
+            val overdueCount = chats.count { it.overdue }
+            _overdue.value = overdueCount.toString()
+            
+            val contextStr = "Average relationship score is $avg out of 100. Overdue follow-up chats: $overdueCount."
+            val prompt = "Based on this live relationship data: $contextStr. Write exactly one short, motivating sentence suggesting what the user should do next to improve their network."
+            
+            val aiResponse = sendOllamaRequest(prompt)
+            _suggestedActions.value = aiResponse.trim()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _suggestedActions.value = "Connect with more people to generate insights."
         }
     }
 

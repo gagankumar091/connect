@@ -46,7 +46,7 @@ class BriefingViewModel(private val repository: VercelRepository = VercelReposit
         .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
-    private val ollamaUrl = "http://51.79.143.65:11434/api/chat"
+    private val ollamaUrl = "${com.mitron.connect.BuildConfig.AI_BASE_URL}api/ai/chat"
     private val modelName = "qwen2:0.5b"
 
     init {

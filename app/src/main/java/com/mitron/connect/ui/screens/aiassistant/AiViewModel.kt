@@ -26,7 +26,7 @@ class AiViewModel(
     private val repository: com.mitron.connect.data.VercelRepository = com.mitron.connect.data.VercelRepository()
 ) : ViewModel() {
     // IMPORTANT: Replace with your actual Server IP
-    private val ollamaUrl = "http://51.79.143.65:11434/api/chat"
+    private val ollamaUrl = "${com.mitron.connect.BuildConfig.AI_BASE_URL}api/ai/chat"
     private val modelName = "qwen2:0.5b"
 
     private val client = OkHttpClient.Builder()
@@ -74,7 +74,7 @@ class AiViewModel(
         }
     }
 
-    private suspend fun sendOllamaRequest(prompt: String): String = withContext(Dispatchers.IO) {
+    private suspend fun sendOllamaRequest(prompt: String): String = kotlinx.coroutines.withTimeout(30000) { withContext(Dispatchers.IO) {
         val currentUserId = repository.getCurrentUserId()
         val currentUser = currentUserId?.let { repository.getContactById(it) }
         val allContacts = repository.getContacts()
@@ -139,5 +139,5 @@ class AiViewModel(
         val messageContent = jsonElement.jsonObject["message"]?.jsonObject?.get("content")?.jsonPrimitive?.content
         
         return@withContext messageContent ?: throw Exception("Failed to parse response")
-    }
+    } }
 }

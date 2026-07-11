@@ -35,7 +35,7 @@ class TimelineViewModel(private val repository: VercelRepository = VercelReposit
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val client = OkHttpClient.Builder().connectTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build()
-    private val ollamaUrl = "http://51.79.143.65:11434/api/chat"
+    private val ollamaUrl = "${com.mitron.connect.BuildConfig.AI_BASE_URL}api/ai/chat"
 
     fun loadTimeline(contactId: String) {
         viewModelScope.launch {

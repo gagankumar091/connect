@@ -90,7 +90,7 @@ class MitronSyncService : Service() {
 
         // Connect to SSE stream for real-time events (chats, calls)
         val request = Request.Builder()
-            .url("https://connect-mitron.vercel.app/api/users/$userId/stream")
+            .url("${com.mitron.connect.BuildConfig.BASE_URL}api/users/$userId/stream")
             .header("Authorization", "Bearer MITRON_SECURE_KEY_2026")
             .build()
 
@@ -124,8 +124,24 @@ class MitronSyncService : Service() {
                     }
                 }
             }
+            override fun onClosed(eventSource: EventSource) {
+                super.onClosed(eventSource)
+                reconnectToStream(userId)
+            }
+
+            override fun onFailure(eventSource: EventSource, t: Throwable?, response: okhttp3.Response?) {
+                super.onFailure(eventSource, t, response)
+                reconnectToStream(userId)
+            }
         }
         eventSource = EventSources.createFactory(client).newEventSource(request, listener)
+    }
+
+    private fun reconnectToStream(userId: String) {
+        scope.launch {
+            delay(5000) // 5s backoff before reconnect
+            connectToStream(userId)
+        }
     }
 
     private fun sendLocalNotification(title: String, messageBody: String, type: String, chatId: String, actionId: String) {

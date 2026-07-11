@@ -80,6 +80,7 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
                     val n = repository.getNotifications()
                     val r = repository.getReminders()
                     val ch = repository.getChats()
+                    
                     // Merge reminders into notifications list for the reminders screen
                     _notifications.value = (n + r).distinctBy { it.id }.sortedByDescending { it.isPastDue }
                     if (ch.isNotEmpty()) {

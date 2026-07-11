@@ -143,9 +143,9 @@ fun ProfileScreen(
             
             // Profile Identity
             Box(modifier = Modifier.padding(top = 16.dp)) {
-                if (currentContact.avatarUrl != null) {
+                if (currentContact.avatarUrl?.isNotBlank() == true) {
                     AsyncImage(
-                        model = currentContact.avatarUrl.toImageModel(),
+                        model = currentContact.avatarUrl,
                         contentDescription = "Avatar",
                         modifier = Modifier
                             .size(96.dp)
@@ -296,7 +296,84 @@ fun ProfileScreen(
                 })
             }
             
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // QR Code Section
+            if (contactId == "my_card") {
+                var flipped by remember { mutableStateOf(false) }
+                val rotation by animateFloatAsState(
+                    targetValue = if (flipped) 180f else 0f,
+                    animationSpec = spring(dampingRatio = 0.5f, stiffness = 100f),
+                    label = "cubeRotate"
+                )
+                
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .graphicsLayer {
+                            rotationY = rotation
+                            cameraDistance = 12f * density
+                        }
+                        .clickable {
+                            flipped = !flipped
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, "Connect with me on Mitron: mitron.app/u/${currentContact.id}")
+                            }
+                            // Only share if long pressed in real app, tap flips cube
+                        },
+                    colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+                ) {
+                    if (rotation <= 90f) {
+                        Column(
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("My Mitron Code", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .background(Color(0xFFF3F4F6), RoundedCornerShape(8.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.QrCode2, contentDescription = "QR", modifier = Modifier.size(64.dp), tint = Color.Black)
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text("Tap to Flip", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        }
+                    } else {
+                        // Back side of the cube
+                        Column(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth()
+                                .graphicsLayer { rotationY = 180f }, // un-mirror text
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("Bio & Status", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Building the future of communication. Always open to collaborate!",
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                color = Color.Gray
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Button(onClick = {
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, "Connect with me on Mitron: mitron.app/u/${currentContact.id}")
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Share Mitron Code"))
+                            }) {
+                                Text("Share Profile")
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+            }
             
             // About & Contact Details
             val hasDetails = !currentContact.website.isNullOrEmpty() || currentContact.email.isNotEmpty() || !currentContact.phone.isNullOrEmpty()
@@ -384,9 +461,12 @@ fun ProfileScreen(
             
             // Bottom Buttons
             if (contactId == "my_card") {
-                // For 'my_card', show the logout button at the bottom (matching design)
+                var isLoggingOut by remember { mutableStateOf(false) }
                 OutlinedButton(
-                    onClick = onLogout,
+                    onClick = {
+                        isLoggingOut = true
+                        onLogout()
+                    },
                     modifier = Modifier.fillMaxWidth(0.6f).height(48.dp),
                     shape = RoundedCornerShape(24.dp),
                     border = BorderStroke(1.dp, colors.danger),
@@ -396,6 +476,13 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Log out", fontWeight = FontWeight.SemiBold)
                 }
+                
+                if (isLoggingOut) {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.8f)).clickable(enabled=false){}, contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = colors.fillPrimary)
+                    }
+                }
+                
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }

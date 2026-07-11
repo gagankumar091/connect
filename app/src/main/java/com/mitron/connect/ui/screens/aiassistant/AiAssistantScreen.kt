@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mitron.connect.data.model.ChatMessage
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 
 @Composable
 fun AiAssistantScreen(
@@ -41,6 +42,48 @@ fun AiAssistantScreen(
         "Remind me after Ganesh Chaturthi"
     )
 
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun ModelDropdown() {
+        val models = listOf("llama3.2:1b", "phi3", "mistral")
+        var expanded by remember { mutableStateOf(false) }
+        // Read selected model from ViewModel in real implementation
+        var selectedModel by remember { mutableStateOf(models[0]) }
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it }
+        ) {
+            OutlinedTextField(
+                value = selectedModel,
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier.menuAnchor().width(150.dp).height(48.dp),
+                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp),
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent
+                )
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                models.forEach { model ->
+                    DropdownMenuItem(
+                        text = { Text(model, fontSize = 12.sp) },
+                        onClick = {
+                            selectedModel = model
+                            expanded = false
+                            // Save to DataStore logic goes here
+                        }
+                    )
+                }
+            }
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -54,28 +97,31 @@ fun AiAssistantScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
-                .padding(vertical = 16.dp),
-            horizontalArrangement = Arrangement.Center,
+                .padding(vertical = 8.dp, horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                color = Color(0xFFE0E7FF), // indigo-100
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.padding(end = 8.dp)
-            ) {
-                Icon(
-                    Icons.Filled.Star,
-                    contentDescription = "AI",
-                    tint = Color(0xFF4F46E5), // indigo-600
-                    modifier = Modifier.padding(6.dp).size(20.dp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    color = Color(0xFFE0E7FF), // indigo-100
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Star,
+                        contentDescription = "AI",
+                        tint = Color(0xFF4F46E5), // indigo-600
+                        modifier = Modifier.padding(6.dp).size(20.dp)
+                    )
+                }
+                Text(
+                    text = "AI Assistant",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF111827) // gray-900
                 )
             }
-            Text(
-                text = "AI Assistant",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF111827) // gray-900
-            )
+            ModelDropdown()
         }
         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF3F4F6))) // border-b
 
@@ -104,6 +150,7 @@ fun AiAssistantScreen(
 
             // Quick Actions
             item {
+                var clickedAction by remember { mutableStateOf<String?>(null) }
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -114,16 +161,28 @@ fun AiAssistantScreen(
                             shape = RoundedCornerShape(24.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
                             modifier = Modifier
-                                .clickable { viewModel.sendMessage(action) }
+                                .clickable(enabled = !isLoading) { 
+                                    clickedAction = action
+                                    viewModel.sendMessage(action) 
+                                }
                                 .padding(end = 16.dp)
                         ) {
-                            Text(
-                                text = action,
-                                color = Color(0xFF4F46E5), // indigo-600
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isLoading && clickedAction == action) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.padding(start = 12.dp).size(14.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color(0xFF4F46E5)
+                                    )
+                                }
+                                Text(
+                                    text = action,
+                                    color = if (isLoading && clickedAction != action) Color.Gray else Color(0xFF4F46E5), // indigo-600
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -216,6 +275,16 @@ private fun ChatBubble(message: ChatMessage) {
             }
         } else {
             // AI Response Card
+            var displayedText by remember { mutableStateOf("") }
+            LaunchedEffect(message.text) {
+                if (message.text.length > displayedText.length) {
+                    for (i in displayedText.length until message.text.length) {
+                        displayedText += message.text[i]
+                        if (i % 3 == 0) delay(10) // typewriter effect speed
+                    }
+                }
+            }
+            
             Surface(
                 color = Color.White,
                 shape = RoundedCornerShape(16.dp),
@@ -225,7 +294,7 @@ private fun ChatBubble(message: ChatMessage) {
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        text = message.text,
+                        text = displayedText,
                         color = Color(0xFF374151), // gray-700
                         fontSize = 14.sp,
                         lineHeight = 22.sp

@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    id("com.google.gms.google-services")
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
 }
 
@@ -41,6 +40,21 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    
+    flavorDimensions += "env"
+    productFlavors {
+        create("dev") {
+            dimension = "env"
+            buildConfigField("String", "BASE_URL", "\"https://connect-mitron.vercel.app/\"")
+            buildConfigField("String", "AI_BASE_URL", "\"http://51.79.143.65:3001/\"")
+        }
+        create("prod") {
+            dimension = "env"
+            buildConfigField("String", "BASE_URL", "\"https://connect-mitron.vercel.app/\"")
+            buildConfigField("String", "AI_BASE_URL", "\"http://51.79.143.65:3001/\"")
+        }
     }
 }
 
@@ -60,8 +74,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     debugImplementation(libs.androidx.ui.tooling)
 
-    // Firebase BoM
-    // Firebase Auth and Firestore
+    // Firebase BoM and Auth removed as per self-hosted requirements
     implementation("io.coil-kt:coil-compose:2.6.0")
     // QR Code generation
     implementation("com.google.zxing:core:3.5.3")
@@ -92,5 +105,9 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0-alpha01")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0-alpha01")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    
+    // Maps Compose
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 }
 

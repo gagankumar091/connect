@@ -117,9 +117,15 @@ interface MitronApiService {
     @POST("api/calls/initiate")
     suspend fun initiateCall(@Body request: InitiateCallRequest): CallInitiatedResponse
 
-    @POST("api/calls/token")
-    suspend fun generateToken(@Body request: TokenRequest): TokenResponse
+    @retrofit2.http.Multipart
+    @POST("api/chat/upload")
+    suspend fun uploadFile(
+        @retrofit2.http.Part file: okhttp3.MultipartBody.Part
+    ): FileUploadResponse
 }
+
+@kotlinx.serialization.Serializable
+data class FileUploadResponse(val success: Boolean, val fileUrl: String? = null, val error: String? = null)
 
 
 @kotlinx.serialization.Serializable
@@ -213,7 +219,7 @@ data class TokenResponse(
 )
 
 object RetrofitClient {
-    private const val BASE_URL = "https://connect-mitron.vercel.app/"
+    private val BASE_URL = com.mitron.connect.BuildConfig.BASE_URL
     
     private val json = Json {
         ignoreUnknownKeys = true
