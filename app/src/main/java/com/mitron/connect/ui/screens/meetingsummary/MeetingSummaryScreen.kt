@@ -97,7 +97,7 @@ fun MeetingSummaryScreen(
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true, showSystemUi = true)
 @androidx.compose.runtime.Composable
 fun MeetingSummaryScreenPreview() {
-    com.mitron.connect.ui.theme.ConnectAppTheme {
+    com.mitron.connect.ui.theme.ConnectTheme {
         MeetingSummaryScreen(contactId = "preview", onBack = {})
     }
 }

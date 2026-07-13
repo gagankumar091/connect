@@ -47,7 +47,7 @@ fun HomeFeedContent(
     
     val displayChats = when (selectedFilter) {
         "Unread" -> chats.filter { it.unreadCount > 0 }
-        "Groups" -> chats.filter { it.contactId.isEmpty() || it.name.contains("Group") } // Mock logic for groups
+        "Groups" -> chats.filter { it.contactId.isEmpty() }
         else -> chats
     }
 
@@ -256,8 +256,8 @@ fun ChatItem(chat: ChatPreview, onClick: () -> Unit, onOpenProfile: (String) -> 
                 background = Color(0xFF0F172A), // Slate 900 for default fallback
                 foreground = Color.White
             )
-            // Active dot could go here
-            if (chat.name == "Rahul Sharma") {
+            // Show online dot only if backend marks the contact as online
+            if (chat.unreadCount > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)

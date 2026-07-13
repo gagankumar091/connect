@@ -10,6 +10,7 @@ object Destinations {
     const val TIMELINE = "timeline/{contactId}"
     const val MEETING_SUMMARY = "meetingSummary/{contactId}"
     const val SMART_SEARCH = "smartSearch"
+    const val SCANNER = "scanner"
     const val BUSINESS_CARD = "businessCard/{contactId}"
     const val COMPANY_DETAIL = "company/{companyId}"
     const val EVENT_DETAIL = "event/{eventId}"

@@ -89,7 +89,7 @@ fun ContactCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = avatarUrl ?: "https://api.dicebear.com/7.x/initials/svg?seed=$name",
+                model = if (!avatarUrl.isNullOrEmpty() && avatarUrl != "null") avatarUrl else "https://api.dicebear.com/7.x/initials/svg?seed=$name",
                 contentDescription = null,
                 modifier = Modifier
                     .size(48.dp)

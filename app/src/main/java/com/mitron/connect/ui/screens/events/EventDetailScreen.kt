@@ -3,30 +3,44 @@ package com.mitron.connect.ui.screens.events
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.ChatBubbleOutline
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.WavingHand
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.mitron.connect.data.model.Contact
-import com.mitron.connect.ui.components.Avatar
-import com.mitron.connect.ui.theme.AvatarSize
+
+// Premium Tokens
+private val EventBg = Color(0xFFF6F2FA)
+private val EventSurface = Color(0xFFFBF8FF)
+private val EventPrimary = Color(0xFF4343D5)
+private val EventPrimaryContainer = Color(0xFF5D5FEF)
+private val EventSecondary = Color(0xFF00CCF9)
+private val EventOnSurface = Color(0xFF1B1B20)
+private val EventVariant = Color(0xFF464555)
+private val EventOutline = Color(0xFF767586)
+private val EventSurfLow = Color(0xFFEEEAF4)
+private val EventDivider = Color(0xFFC7C4D7)
+private val SuccessColor = Color(0xFF10B981)
 
 @Composable
 fun EventDetailScreen(
@@ -41,116 +55,138 @@ fun EventDetailScreen(
     
     val event by viewModel.event.collectAsState()
     val attendees by viewModel.attendees.collectAsState()
+    
+    var selectedTab by remember { mutableStateOf(0) }
 
     if (event == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color(0xFF2563EB))
+        Box(modifier = Modifier.fillMaxSize().background(EventBg), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = EventPrimary)
         }
         return
     }
 
     Scaffold(
-        containerColor = Color(0xFFF8F9FB),
+        containerColor = EventBg,
         topBar = {
-            Column(modifier = Modifier.background(Color.White)) {
-                Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Row(verticalAlignment = Alignment.Top) {
-                        IconButton(onClick = onBack, modifier = Modifier.size(24.dp).padding(top = 4.dp, end = 8.dp)) {
-                            Icon(Icons.Filled.ArrowBackIosNew, contentDescription = "Back", tint = Color.Black, modifier = Modifier.size(18.dp))
-                        }
-                        Column {
-                            Text(event!!.title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
-                            Text(event!!.location ?: "Location Unknown", fontSize = 12.sp, color = Color(0xFF6B7280))
-                        }
-                    }
-                    Text("Change Event", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB), modifier = Modifier.clickable { onBack() })
-                }
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Nearby (${attendees.size})", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), modifier = Modifier.padding(bottom = 12.dp))
-                        Box(modifier = Modifier.height(2.dp).width(80.dp).background(Color(0xFF2563EB)))
-                    }
-                    Text("People", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF6B7280), modifier = Modifier.padding(bottom = 12.dp))
-                    Text("Groups", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF6B7280), modifier = Modifier.padding(bottom = 12.dp))
-                }
-                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF3F4F6)))
-            }
-        },
-        bottomBar = {
             Surface(
-                color = Color.White,
-                shadowElevation = 16.dp,
+                color = EventBg.copy(alpha = 0.9f),
+                shadowElevation = 0.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp)
                 ) {
-                    EventBottomNavIcon(Icons.Filled.ChatBubbleOutline, "Chats", Color(0xFF9CA3AF))
-                    EventBottomNavIcon(Icons.Outlined.Call, "Calls", Color(0xFF9CA3AF))
-                    
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Row(verticalAlignment = Alignment.Top) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = onBack
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = EventOnSurface)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(event!!.title, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = EventOnSurface, lineHeight = 32.sp)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(event!!.location ?: "Location Unknown", fontSize = 14.sp, color = EventOutline)
+                            }
+                        }
                         Box(
                             modifier = Modifier
-                                .offset(y = (-16).dp)
-                                .size(48.dp)
-                                .background(Color(0xFF2563EB), CircleShape)
-                                .border(4.dp, Color.White, CircleShape),
-                            contentAlignment = Alignment.Center
+                                .background(EventPrimary.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onBack
+                                )
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            Icon(Icons.Filled.LocationOn, contentDescription = "Discover", tint = Color.White, modifier = Modifier.size(24.dp))
+                            Text("Change", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EventPrimary)
                         }
-                        Text("Discover", fontSize = 10.sp, color = Color(0xFF2563EB), modifier = Modifier.offset(y = (-8).dp))
                     }
                     
-                    EventBottomNavIcon(Icons.Outlined.Event, "Events", Color(0xFF9CA3AF))
-                    EventBottomNavIcon(Icons.Outlined.AutoAwesome, "AI", Color(0xFF9CA3AF))
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Tabs
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        val tabs = listOf("Nearby (${attendees.size})", "People (${attendees.size})", "Groups")
+                        tabs.forEachIndexed { index, title ->
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = { selectedTab = index }
+                                    ),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = title,
+                                    fontSize = 15.sp,
+                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (selectedTab == index) EventPrimary else EventOutline,
+                                    modifier = Modifier.padding(bottom = 12.dp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (selectedTab == index) {
+                                    Box(modifier = Modifier.fillMaxWidth(0.9f).height(3.dp).clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)).background(EventPrimary))
+                                } else {
+                                    Box(modifier = Modifier.fillMaxWidth(0.9f).height(3.dp).background(Color.Transparent))
+                                }
+                            }
+                        }
+                    }
+
                 }
             }
         }
     ) { innerPadding ->
-        if (attendees.isEmpty()) {
-            Box(
-                modifier = Modifier.padding(innerPadding).fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("No attendees yet", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Be the first to join this event!", fontSize = 14.sp, color = Color(0xFF9CA3AF))
+        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            HorizontalDivider(color = EventDivider.copy(alpha = 0.3f))
+            
+            if (attendees.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("No attendees yet", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = EventVariant)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Be the first to join this event!", fontSize = 14.sp, color = EventOutline)
+                    }
                 }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(vertical = 20.dp)
-            ) {
-                items(attendees) { contact ->
-                    EventAttendeeRow(
-                        contact = contact,
-                        onClick = { onOpenProfile(contact.id) }
-                    )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 100.dp)
+                ) {
+                    itemsIndexed(attendees) { index, contact ->
+                        EventAttendeeRow(
+                            contact = contact,
+                            index = index,
+                            onClick = { onOpenProfile(contact.id) }
+                        )
+                    }
                 }
             }
         }
@@ -158,47 +194,115 @@ fun EventDetailScreen(
 }
 
 @Composable
-fun EventBottomNavIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable {  }) {
-        Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(label, fontSize = 10.sp, color = color)
+private fun EventAttendeeRow(contact: Contact, index: Int, onClick: () -> Unit) {
+    val gradientBrush = remember(index) {
+        when (index % 4) {
+            0 -> Brush.verticalGradient(listOf(EventPrimary, EventSecondary))
+            1 -> Brush.verticalGradient(listOf(EventPrimaryContainer, EventPrimaryContainer))
+            else -> Brush.verticalGradient(listOf(EventDivider, EventDivider))
+        }
     }
-}
 
-@Composable
-private fun EventAttendeeRow(contact: Contact, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .shadow(4.dp, RoundedCornerShape(16.dp), spotColor = EventPrimary.copy(alpha = 0.08f))
+            .clip(RoundedCornerShape(16.dp))
+            .background(EventSurface)
+            .border(1.dp, EventDivider.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (!contact.avatarUrl.isNullOrEmpty()) {
-                AsyncImage(
-                    model = contact.avatarUrl,
-                    contentDescription = contact.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(48.dp).clip(CircleShape)
-                )
-            } else {
-                Avatar(initials = contact.initials, size = AvatarSize.small)
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(contact.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
-                Text(contact.title ?: "Mitron User", fontSize = 12.sp, color = Color(0xFF6B7280))
-            }
-        }
+        // Colored edge strip
         Box(
             modifier = Modifier
-                .size(20.dp)
-                .background(Color(0xFFDCFCE7), CircleShape),
-            contentAlignment = Alignment.Center
+                .width(4.dp)
+                .fillMaxHeight()
+                .align(Alignment.CenterVertically)
         ) {
-            Box(modifier = Modifier.size(8.dp).background(Color(0xFF22C55E), CircleShape))
+            Box(modifier = Modifier.fillMaxSize().background(gradientBrush))
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.size(52.dp)) {
+                if (!contact.avatarUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = contact.avatarUrl,
+                        contentDescription = contact.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(CircleShape)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Brush.linearGradient(listOf(EventPrimary.copy(alpha=0.15f), EventPrimaryContainer.copy(alpha=0.08f))), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(contact.initials.take(2).uppercase(), color = EventPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(14.dp)
+                        .background(SuccessColor, CircleShape)
+                        .border(2.dp, EventSurface, CircleShape)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(14.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(contact.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = EventOnSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = buildString {
+                        if (!contact.title.isNullOrEmpty()) append(contact.title)
+                        if (!contact.title.isNullOrEmpty() && !contact.company.isNullOrEmpty()) append(" · ")
+                        if (!contact.company.isNullOrEmpty()) append(contact.company)
+                        if (isEmpty()) append("Mitron User")
+                    }, 
+                    fontSize = 13.sp, 
+                    color = EventOutline,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                val distanceText = contact.distance?.let { "${it.toInt()}m" } ?: ""
+                if (distanceText.isNotEmpty()) {
+                    Text(distanceText, fontSize = 11.sp, color = EventPrimary, fontWeight = FontWeight.SemiBold)
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(EventSurfLow, CircleShape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.WavingHand, contentDescription = "Wave", tint = EventPrimary, modifier = Modifier.size(18.dp))
+                }
+            }
         }
     }
 }

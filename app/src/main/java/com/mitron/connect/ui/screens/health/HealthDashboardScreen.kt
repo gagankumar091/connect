@@ -98,7 +98,7 @@ private fun MetricCard(value: String, label: String, valueColor: Color, modifier
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true, showSystemUi = true)
 @androidx.compose.runtime.Composable
 fun HealthDashboardScreenPreview() {
-    com.mitron.connect.ui.theme.ConnectAppTheme {
+    com.mitron.connect.ui.theme.ConnectTheme {
         HealthDashboardScreen(onBack = {})
     }
 }

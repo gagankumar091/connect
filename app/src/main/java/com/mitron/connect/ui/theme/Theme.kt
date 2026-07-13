@@ -97,10 +97,22 @@ fun ConnectTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        shapes = Shapes,
-        content = content
-    )
+    val connectColors = if (useDarkTheme) DarkConnectColors else LightConnectColors
+
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalConnectColors provides connectColors
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            shapes = Shapes,
+            content = content
+        )
+    }
+}
+
+object ConnectTheme {
+    val colors: ConnectColorScheme
+        @Composable
+        get() = LocalConnectColors.current
 }

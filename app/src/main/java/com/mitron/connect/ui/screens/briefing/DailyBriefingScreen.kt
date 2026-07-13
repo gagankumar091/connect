@@ -131,7 +131,7 @@ private fun BriefingRow(item: BriefingItem, isCompleted: Boolean, onToggle: () -
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true, showSystemUi = true)
 @androidx.compose.runtime.Composable
 fun DailyBriefingScreenPreview() {
-    com.mitron.connect.ui.theme.ConnectAppTheme {
+    com.mitron.connect.ui.theme.ConnectTheme {
         DailyBriefingScreen(onContinue = {})
     }
 }

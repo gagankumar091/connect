@@ -201,7 +201,7 @@ fun EditProfileScreen(
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true, showSystemUi = true)
 @androidx.compose.runtime.Composable
 fun EditProfileScreenPreview() {
-    com.mitron.connect.ui.theme.ConnectAppTheme {
+    com.mitron.connect.ui.theme.ConnectTheme {
         EditProfileScreen(onBack = {})
     }
 }

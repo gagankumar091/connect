@@ -12,6 +12,8 @@ data class Event(
     var description: String? = null,
     var date: String? = null,
     var distance: Double? = null,
+    var lat: Double? = null,
+    var lng: Double? = null,
     @SerialName("attendee_ids")
     var attendeeIds: List<String> = emptyList()
 )

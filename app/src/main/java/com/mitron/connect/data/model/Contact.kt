@@ -11,6 +11,7 @@ data class Contact(
     var username: String? = null,
     var title: String? = null,
     var company: String? = null,
+    var about: String? = null,
     
     @SerialName("avatar_url")
     var avatarUrl: String? = null,

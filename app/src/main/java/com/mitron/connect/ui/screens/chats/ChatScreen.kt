@@ -6,12 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.AddReaction
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -20,22 +20,20 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Send
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -47,10 +45,34 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import java.util.Date
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import java.io.File
 import java.io.FileOutputStream
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.draw.blur
+
+val SurfaceColor = Color(0xFFFAF8FF)
+val SurfaceContainerLowest = Color(0xFFFFFFFF)
+val SurfaceContainerLow = Color(0xFFF2F3FF)
+val SurfaceContainerHigh = Color(0xFFE2E7FF)
+val SurfaceVariantColor = Color(0xFFDAE2FD)
+val PrimaryColor = Color(0xFF0900DB)
+val PrimaryContainer = Color(0xFF2D31FA)
+val SecondaryContainer = Color(0xFF00CCF9)
+val OutlineVariant = Color(0xFFC6C4DA)
+val OutlineColor = Color(0xFF767589)
+val OnSurfaceColor = Color(0xFF131B2E)
+val OnSurfaceVariantColor = Color(0xFF454557)
+val SecondaryColor = Color(0xFF00677F)
+val OnPrimaryColor = Color(0xFFFFFFFF)
+val OnPrimaryContainer = Color(0xFFC8CAFF)
+val OnSecondaryContainer = Color(0xFF005266)
+val BackgroundColor = Color(0xFFFAF8FF)
+val ErrorColor = Color(0xFFBA1A1A)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -67,7 +89,6 @@ fun ChatScreen(
     val haptic = LocalHapticFeedback.current
     
     var isUploading by remember { mutableStateOf(false) }
-    
     var selectedMessage by remember { mutableStateOf<ChatMessage?>(null) }
     var showMessageActions by remember { mutableStateOf(false) }
 
@@ -80,8 +101,6 @@ fun ChatScreen(
             inputStream?.copyTo(outputStream)
             inputStream?.close()
             outputStream.close()
-            
-            viewModel.uploadAttachment(chatId, tempFile, inputText)
             inputText = ""
             isUploading = false
         }
@@ -93,79 +112,131 @@ fun ChatScreen(
     }
 
     LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
+        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size)
     }
 
     Scaffold(
+        containerColor = SurfaceContainerLowest,
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AsyncImage(
-                            model = "https://api.dicebear.com/7.x/initials/svg?seed=${contact?.name ?: ""}",
-                            contentDescription = null,
-                            modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(contact?.name ?: "Chat", style = MaterialTheme.typography.titleMedium)
-                            Text("Online", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            Surface(
+                color = SurfaceColor.copy(alpha = 0.8f),
+                modifier = Modifier.fillMaxWidth().border(0.dp, Color.Transparent).background(SurfaceColor.copy(alpha = 0.8f)).shadow(0.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .statusBarsPadding(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = onBack, modifier = Modifier.size(40.dp).offset(x = (-8).dp)) { 
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = OnSurfaceColor) 
+                            }
+                            Box {
+                                AsyncImage(
+                                    model = contact?.avatarUrl ?: "https://api.dicebear.com/7.x/initials/svg?seed=${contact?.name ?: ""}",
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp).clip(CircleShape).border(1.dp, OutlineVariant.copy(alpha = 0.2f), CircleShape),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .size(12.dp)
+                                        .background(SecondaryContainer, CircleShape)
+                                        .border(2.dp, SurfaceColor, CircleShape)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(contact?.name ?: "Chat", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OnSurfaceColor, lineHeight = 20.sp)
+                                Text("Online", fontSize = 12.sp, color = OnSurfaceVariantColor)
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            IconButton(onClick = { /* Call */ }, modifier = Modifier.size(40.dp)) { Icon(Icons.Outlined.Call, contentDescription = "Call", tint = OnSurfaceColor) }
+                            IconButton(onClick = { /* More */ }, modifier = Modifier.size(40.dp)) { Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = OnSurfaceColor) }
                         }
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Rounded.ArrowBack, contentDescription = "Back") }
-                },
-                actions = {
-                    IconButton(onClick = { /* Call logic */ }) { Icon(Icons.Filled.Call, contentDescription = "Call") }
-                    IconButton(onClick = { /* Video Call logic */ }) { Icon(Icons.Filled.Videocam, contentDescription = "Video Call") }
+                    HorizontalDivider(color = OutlineVariant.copy(alpha = 0.3f), thickness = 1.dp)
                 }
-            )
+            }
         },
         bottomBar = {
-            Box(modifier = Modifier.fillMaxWidth().padding(16.dp).navigationBarsPadding().imePadding()) {
-                Surface(
-                    shape = RoundedCornerShape(32.dp),
-                    color = Color.White.copy(alpha = 0.9f),
-                    shadowElevation = 16.dp,
-                    modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(SurfaceColor.copy(alpha = 0.9f))
+            ) {
+                HorizontalDivider(color = OutlineVariant.copy(alpha = 0.3f), thickness = 1.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 12.dp)
+                        .navigationBarsPadding()
+                        .imePadding(),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column {
-                        IsTypingWrapper(viewModel)
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(onClick = { filePickerLauncher.launch("image/*") }) {
-                                if (isUploading) CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                else Icon(Icons.Filled.AttachFile, contentDescription = "Attach")
+                    IconButton(
+                        onClick = { filePickerLauncher.launch("*/*") },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(Icons.Outlined.AttachFile, contentDescription = "Attach", tint = OnSurfaceVariantColor)
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .defaultMinSize(minHeight = 44.dp)
+                            .background(SurfaceContainerHigh, RoundedCornerShape(24.dp))
+                            .border(1.dp, if(inputText.isNotEmpty()) PrimaryContainer.copy(alpha = 0.5f) else Color.Transparent, RoundedCornerShape(24.dp))
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        BasicTextField(
+                            value = inputText,
+                            onValueChange = { inputText = it },
+                            modifier = Modifier.fillMaxWidth().padding(end = 32.dp),
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = OnSurfaceColor),
+                            cursorBrush = SolidColor(PrimaryColor),
+                            decorationBox = { innerTextField ->
+                                if (inputText.isEmpty()) {
+                                    Text("Message...", color = OnSurfaceVariantColor.copy(alpha = 0.7f), fontSize = 16.sp)
+                                }
+                                innerTextField()
                             }
-                            TextField(
-                                value = inputText,
-                                onValueChange = { 
-                                    inputText = it
-                                // viewModel.sendTypingEvent(chatId, true)
-                            },
-                            placeholder = { Text("Message...") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            ),
-                            maxLines = 4
                         )
-                        IconButton(
-                            onClick = {
+                        Icon(
+                            Icons.Outlined.Mood,
+                            contentDescription = "Emoji",
+                            tint = OnSurfaceVariantColor,
+                            modifier = Modifier.size(20.dp).align(Alignment.BottomEnd).offset(y = (-2).dp)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .shadow(2.dp, CircleShape, spotColor = SecondaryContainer.copy(alpha = 0.2f))
+                            .background(SecondaryContainer, CircleShape)
+                            .clickable {
                                 if (inputText.isNotBlank()) {
                                     viewModel.sendMessage(chatId, inputText)
                                     inputText = ""
                                 }
                             },
-                            enabled = inputText.isNotBlank()
-                        ) {
-                            Icon(Icons.Rounded.Send, contentDescription = "Send", tint = if (inputText.isNotBlank()) MaterialTheme.colorScheme.primary else Color.Gray)
-                        }
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            if (inputText.isNotBlank()) Icons.Filled.Send else Icons.Filled.Mic,
+                            contentDescription = "Send",
+                            tint = OnSecondaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
@@ -173,9 +244,9 @@ fun ChatScreen(
     ) { innerPadding ->
         LazyColumn(
             state = listState,
-            modifier = Modifier.padding(innerPadding).fillMaxSize(),
+            modifier = Modifier.padding(innerPadding).fillMaxSize().background(SurfaceContainerLowest),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             val groupedMessages = messages.groupBy { msg ->
                 try {
@@ -188,17 +259,21 @@ fun ChatScreen(
 
             groupedMessages.forEach { (dateHeader, msgs) ->
                 stickyHeader {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                            Text(dateHeader, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium)
-                        }
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = dateHeader,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = OnSurfaceVariantColor,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.background(SurfaceContainerHigh, RoundedCornerShape(16.dp)).padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
                     }
                 }
 
                 items(msgs, key = { it.id }) { message ->
                     ChatMessageBubble(
                         message = message, 
-                        contactName = contact?.name,
                         onLongClick = { 
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             selectedMessage = message
@@ -207,13 +282,21 @@ fun ChatScreen(
                     )
                 }
             }
+
+            item {
+                AiSummaryCard()
+            }
+            
+            item {
+                Spacer(modifier = Modifier.height(16.dp)) // padding block
+            }
         }
         
         if (showMessageActions && selectedMessage != null) {
             val clipboardManager: ClipboardManager = LocalClipboardManager.current
             ModalBottomSheet(onDismissRequest = { showMessageActions = false }) {
                 Column(modifier = Modifier.padding(16.dp).padding(bottom = 32.dp)) {
-                    Text("Message Options", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 16.dp))
+                    Text("Message Options", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 16.dp))
                     
                     ListItem(
                         headlineContent = { Text("Copy Text") },
@@ -234,7 +317,6 @@ fun ChatScreen(
                             headlineContent = { Text("Delete", color = MaterialTheme.colorScheme.error) },
                             leadingContent = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                             modifier = Modifier.clickable { 
-                                // viewModel.deleteMessage(selectedMessage!!.id)
                                 showMessageActions = false 
                             }
                         )
@@ -247,53 +329,156 @@ fun ChatScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ChatMessageBubble(message: ChatMessage, contactName: String?, onLongClick: () -> Unit = {}) {
+fun ChatMessageBubble(message: ChatMessage, onLongClick: () -> Unit = {}) {
     val isMine = message.fromUser
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.Bottom
     ) {
-        if (!isMine) {
-            AsyncImage(
-                model = "https://api.dicebear.com/7.x/initials/svg?seed=$contactName",
-                contentDescription = null,
-                modifier = Modifier.size(24.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-        
-        Surface(
-            modifier = Modifier.combinedClickable(
-                onClick = {},
-                onLongClick = onLongClick
-            ),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isMine) 16.dp else 4.dp,
-                bottomEnd = if (isMine) 4.dp else 16.dp
-            ),
-            color = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = if (isMine) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+        Column(
+            modifier = Modifier.fillMaxWidth(0.85f),
+            horizontalAlignment = if (isMine) Alignment.End else Alignment.Start
         ) {
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                Text(text = message.text, style = MaterialTheme.typography.bodyLarge)
-                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.align(Alignment.End)) {
-                    val timeStr = try {
-                        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
-                        val date = format.parse(message.createdAt) ?: Date()
-                        SimpleDateFormat("h:mm a", Locale.US).format(date)
-                    } catch(e:Exception) { "10:30 AM" }
-                    
-                    Text(text = timeStr, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp))
-                    if (isMine) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = if (message.isRead == 1) Icons.Filled.DoneAll else Icons.Filled.Done,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp).padding(top = 4.dp)
+            Box(
+                modifier = Modifier
+                    .combinedClickable(onClick = {}, onLongClick = onLongClick)
+                    .shadow(1.dp, RoundedCornerShape(
+                        topStart = 16.dp, topEnd = 16.dp,
+                        bottomStart = if (isMine) 16.dp else 2.dp,
+                        bottomEnd = if (isMine) 2.dp else 16.dp
+                    ), spotColor = Color.Black.copy(alpha = 0.05f))
+                    .background(
+                        if (isMine) SurfaceVariantColor else SurfaceContainerLow,
+                        RoundedCornerShape(
+                            topStart = 16.dp, topEnd = 16.dp,
+                            bottomStart = if (isMine) 16.dp else 2.dp,
+                            bottomEnd = if (isMine) 2.dp else 16.dp
                         )
+                    )
+                    .border(
+                        1.dp,
+                        if (isMine) Color.Transparent else OutlineVariant.copy(alpha = 0.2f),
+                        RoundedCornerShape(
+                            topStart = 16.dp, topEnd = 16.dp,
+                            bottomStart = if (isMine) 16.dp else 2.dp,
+                            bottomEnd = if (isMine) 2.dp else 16.dp
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+            ) {
+                Text(
+                    text = message.text,
+                    fontSize = 16.sp,
+                    color = OnSurfaceColor,
+                    lineHeight = 24.sp
+                )
+            }
+            
+            val timeStr = try {
+                val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
+                val date = format.parse(message.createdAt) ?: Date()
+                SimpleDateFormat("h:mm a", Locale.US).format(date)
+            } catch(e:Exception) { "10:30 AM" }
+            
+            Row(
+                verticalAlignment = Alignment.CenterVertically, 
+                modifier = Modifier.padding(top = 4.dp, start = if(!isMine) 4.dp else 0.dp, end = if(isMine) 4.dp else 0.dp)
+            ) {
+                Text(
+                    text = timeStr,
+                    fontSize = 11.sp,
+                    color = OnSurfaceVariantColor
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = if (message.isRead == 1) Icons.Filled.DoneAll else Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = if (message.isRead == 1 && !isMine) SecondaryColor else OnSurfaceVariantColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AiSummaryCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .shadow(4.dp, RoundedCornerShape(20.dp), spotColor = PrimaryContainer.copy(alpha = 0.03f))
+            .clip(RoundedCornerShape(20.dp))
+            .background(PrimaryContainer.copy(alpha = 0.05f))
+            .border(1.dp, PrimaryContainer.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+    ) {
+        // Decorative gradient blur
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 40.dp, y = (-40).dp)
+                .size(128.dp)
+                .background(PrimaryContainer.copy(alpha = 0.1f), CircleShape)
+                .blur(24.dp)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = PrimaryColor, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("AI Summary", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OnSurfaceColor)
+                }
+                Box(modifier = Modifier.background(PrimaryContainer, RoundedCornerShape(12.dp)).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                    Text("New", fontSize = 10.sp, color = OnPrimaryContainer)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 4.dp)) {
+                AiSummaryItem("Exploring SAP integration")
+                AiSummaryItem("Estimated budget: ~$100k")
+                AiSummaryItem("Wants demo in August")
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = {},
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = SurfaceColor, contentColor = OnSurfaceColor),
+                    border = BorderStroke(1.dp, OutlineVariant),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    contentPadding = PaddingValues(horizontal = 0.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(Icons.Outlined.TaskAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Create Task", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Button(
+                    onClick = {},
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor, contentColor = OnPrimaryColor),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    contentPadding = PaddingValues(horizontal = 0.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(Icons.Outlined.Save, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Save to CRM", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -302,23 +487,17 @@ fun ChatMessageBubble(message: ChatMessage, contactName: String?, onLongClick: (
 }
 
 @Composable
-fun TypingIndicator() {
-    val transition = rememberInfiniteTransition(label = "typing")
-    val alpha1 by transition.animateFloat(initialValue = 0.2f, targetValue = 1f, animationSpec = infiniteRepeatable(tween(300, delayMillis = 0), RepeatMode.Reverse), label = "a1")
-    val alpha2 by transition.animateFloat(initialValue = 0.2f, targetValue = 1f, animationSpec = infiniteRepeatable(tween(300, delayMillis = 150), RepeatMode.Reverse), label = "a2")
-    val alpha3 by transition.animateFloat(initialValue = 0.2f, targetValue = 1f, animationSpec = infiniteRepeatable(tween(300, delayMillis = 300), RepeatMode.Reverse), label = "a3")
-
-    Row(modifier = Modifier.padding(start = 56.dp, top = 4.dp, bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = alpha1)))
-        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = alpha2)))
-        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = alpha3)))
-    }
-}
-
-@Composable
-fun IsTypingWrapper(viewModel: ChatViewModel) {
-    val isTyping by viewModel.isTyping.collectAsState(initial = false)
-    AnimatedVisibility(visible = isTyping) {
-        TypingIndicator()
+fun AiSummaryItem(text: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        Box(
+            modifier = Modifier.padding(top = 8.dp).size(6.dp).background(PrimaryColor, CircleShape)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            fontSize = 14.sp,
+            color = OnSurfaceColor,
+            lineHeight = 22.sp
+        )
     }
 }

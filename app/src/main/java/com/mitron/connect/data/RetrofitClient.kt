@@ -117,6 +117,9 @@ interface MitronApiService {
     @POST("api/calls/initiate")
     suspend fun initiateCall(@Body request: InitiateCallRequest): CallInitiatedResponse
 
+    @POST("api/calls/token")
+    suspend fun generateToken(@Body request: TokenRequest): TokenResponse
+
     @retrofit2.http.Multipart
     @POST("api/chat/upload")
     suspend fun uploadFile(

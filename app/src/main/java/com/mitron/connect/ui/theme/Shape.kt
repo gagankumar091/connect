@@ -9,3 +9,5 @@ val Shapes = Shapes(
     medium = RoundedCornerShape(16.dp),
     large = RoundedCornerShape(24.dp)
 )
+
+val PillShape = RoundedCornerShape(percent = 50)
