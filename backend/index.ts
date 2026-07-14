@@ -8,7 +8,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
-const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -17,7 +16,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const pool = mysql.createPool({ uri: process.env.DATABASE_URL, waitForConnections: true, connectionLimit: 10 });
+const pool = mysql.createPool({ uri: process.env.DATABASE_URL || "mysql://user:pass@localhost:3306/db", waitForConnections: true, connectionLimit: 10 });
 
 // Global Rate Limiter
 const apiLimiter = rateLimit({
