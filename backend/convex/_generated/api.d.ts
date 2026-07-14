@@ -9,6 +9,7 @@
  */
 
 import type * as ai from "../ai.js";
+import type * as auth from "../auth.js";
 import type * as briefing from "../briefing.js";
 import type * as health from "../health.js";
 import type * as timeline from "../timeline.js";
@@ -21,6 +22,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
+  auth: typeof auth;
   briefing: typeof briefing;
   health: typeof health;
   timeline: typeof timeline;

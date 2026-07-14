@@ -1,5 +1,12 @@
 {
   "rewrites": [
+    { "source": "/api/register", "destination": "/api/register.ts" },
+    { "source": "/api/login", "destination": "/api/login.ts" },
+    { "source": "/api/users", "destination": "/api/users.ts" },
+    { "source": "/api/briefing", "destination": "/api/briefing.ts" },
+    { "source": "/api/sync", "destination": "/api/sync.ts" },
+    { "source": "/api/health-score", "destination": "/api/health-score.ts" },
+    { "source": "/api/ai/draft-followup", "destination": "/api/ai/draft-followup.ts" },
     { "source": "/(.*)", "destination": "/index.ts" }
   ]
 }
