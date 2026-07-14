@@ -21,6 +21,21 @@ export default defineSchema({
     location: v.optional(v.string()),
   }),
 
+  events: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    location: v.optional(v.string()),
+    timestamp: v.optional(v.string()),
+    attendee_ids: v.array(v.string()),
+  }),
+
+  reminders: defineTable({
+    user_id: v.string(),
+    title: v.string(),
+    due_date: v.string(),
+    is_completed: v.boolean(),
+  }).index("by_user", ["user_id"]),
+
   chats: defineTable({
     user_id: v.string(), // userId of one participant
     contact_id: v.string(), // userId of the other participant

@@ -9,6 +9,9 @@
     { "source": "/api/ai/draft-followup", "destination": "/api/ai/draft-followup.ts" },
     { "source": "/api/chats/:id/messages", "destination": "/api/messages.ts" },
     { "source": "/api/chats/:id", "destination": "/api/chats.ts" },
+    { "source": "/api/events", "destination": "/api/events.ts" },
+    { "source": "/api/companies", "destination": "/api/companies.ts" },
+    { "source": "/api/reminders/:id", "destination": "/api/reminders.ts" },
     { "source": "/(.*)", "destination": "/index.ts" }
   ]
 }

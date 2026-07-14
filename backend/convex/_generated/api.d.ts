@@ -13,6 +13,7 @@ import type * as auth from "../auth.js";
 import type * as briefing from "../briefing.js";
 import type * as chat from "../chat.js";
 import type * as health from "../health.js";
+import type * as system from "../system.js";
 import type * as timeline from "../timeline.js";
 
 import type {
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   briefing: typeof briefing;
   chat: typeof chat;
   health: typeof health;
+  system: typeof system;
   timeline: typeof timeline;
 }>;
 
