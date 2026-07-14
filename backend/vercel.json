@@ -1,14 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/**/*.ts", "use": "@vercel/node" },
-    { "src": "index.js", "use": "@vercel/node" }
-  ],
-  "routes": [
-    { "src": "/api/briefing", "dest": "api/briefing.ts" },
-    { "src": "/api/sync", "dest": "api/sync.ts" },
-    { "src": "/api/health-score", "dest": "api/health-score.ts" },
-    { "src": "/api/ai/draft-followup", "dest": "api/ai/draft-followup.ts" },
-    { "src": "/(.*)", "dest": "index.js" }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
   ]
 }
