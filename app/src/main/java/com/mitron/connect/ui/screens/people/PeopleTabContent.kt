@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mitron.connect.data.model.Contact
+import com.mitron.connect.data.model.RelationshipType
 import com.mitron.connect.ui.components.Avatar
 import com.mitron.connect.ui.components.ConnectSecondaryButton
 import com.mitron.connect.ui.components.ShimmerEffect
@@ -199,17 +200,21 @@ fun PeopleTabContent(
                 }
             } else {
                 items(filteredContacts) { contact -> 
-                    PersonRow(
-                        contact = contact, 
-                        status = connectionStatuses[contact.id],
-                        onClick = { onOpenProfile(contact.id) },
-                        onConnect = { onConnect(contact.id) },
-                        onChat = { onOpenChat(contact.id) }
+                    val contextBadgeText = if (contact.daysSinceContact > 30) {
+                        "⚠️ Re-engage: No contact in ${contact.daysSinceContact} days"
+                    } else {
+                        "Last interacted ${contact.daysSinceContact} days ago"
+                    }
+                    
+                    com.mitron.connect.ui.components.ProfessionalCard(
+                        name = contact.name,
+                        headline = "${contact.title ?: "Professional"} at ${contact.company ?: "Independent"}",
+                        avatarUrl = contact.avatarUrl,
+                        contextBadge = contextBadgeText,
+                        score = contact.score,
+                        onClick = { onOpenProfile(contact.id) }
                     )
-                    HorizontalDivider(
-                        color = PeopleDivider.copy(alpha = 0.25f),
-                        modifier = Modifier.padding(start = 88.dp, end = 20.dp)
-                    )
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
@@ -269,14 +274,25 @@ private fun PersonRow(
                 .padding(horizontal = 20.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val isHighValueProspect = contact.relationshipType == RelationshipType.PROSPECT && contact.score > 80
+            val bgModifier = if (isHighValueProspect) {
+                Modifier.background(
+                    brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                        colors = listOf(PeoplePrimary, Color(0xFF8B5CF6)) // Indigo to Violet
+                    )
+                )
+            } else {
+                Modifier.background(bg)
+            }
+            
             Box(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(CircleShape)
-                    .background(bg),
+                    .then(bgModifier),
                 contentAlignment = Alignment.Center
             ) {
-                Text(contact.initials.take(2).uppercase(), color = fg, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(contact.initials.take(2).uppercase(), color = if (isHighValueProspect) Color.White else fg, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
             
             Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
@@ -291,13 +307,35 @@ private fun PersonRow(
                 Spacer(modifier = Modifier.height(2.dp))
                 val displayTitle = contact.title ?: "Professional"
                 val displayCompany = contact.company ?: "Independent"
-                Text(
-                    text = "$displayTitle, $displayCompany", 
-                    fontSize = 12.sp,
-                    color = PeopleOutline,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val badgeColor = when (contact.relationshipType) {
+                        RelationshipType.PROSPECT -> PeoplePrimary
+                        RelationshipType.CUSTOMER -> Color(0xFF10B981) // Green
+                        RelationshipType.CANDIDATE -> Color(0xFFF59E0B) // Amber
+                        RelationshipType.GENERAL -> PeopleOutline
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(badgeColor.copy(alpha = 0.1f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = contact.relationshipType.name,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = badgeColor
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "$displayTitle, $displayCompany", 
+                        fontSize = 12.sp,
+                        color = PeopleOutline,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.width(12.dp))

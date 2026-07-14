@@ -58,6 +58,9 @@ private fun TimelineIcon.imageVector(): ImageVector = when (this) {
     TimelineIcon.COFFEE -> Icons.Filled.ChatBubble
     TimelineIcon.SEND -> Icons.Filled.Event
     TimelineIcon.CHECK -> Icons.Filled.TaskAlt
+    TimelineIcon.EMAIL -> Icons.Filled.Email
+    TimelineIcon.CALENDAR -> Icons.Filled.CalendarToday
+    TimelineIcon.NOTE -> Icons.Filled.Note
 }
 
 @Composable
@@ -75,8 +78,11 @@ fun TimelineScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var notes by remember { mutableStateOf("") }
+    var selectedOutcome by remember { mutableStateOf("Positive") }
+    val outcomes = listOf("Positive", "Neutral", "Follow-up")
     
-    var selectedTab by remember { mutableStateOf(0) } // 0: Timeline, 1: Notes, 2: Files, 3: Tasks
+    var selectedTab by remember { mutableStateOf(0) }
+    val context = androidx.compose.ui.platform.LocalContext.current // 0: Timeline, 1: Notes, 2: Files, 3: Tasks
 
     if (showDialog) {
         AlertDialog(
@@ -84,21 +90,38 @@ fun TimelineScreen(
             title = { Text("Log a Meeting", color = OnSurfaceColor) },
             text = {
                 Column {
-                    Text("Enter rough notes. The AI will summarize them.", color = OnSurfaceVariantColor, modifier = Modifier.padding(bottom = 8.dp))
+                    Text("Select Outcome", color = OnSurfaceColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        outcomes.forEach { outcome ->
+                            val isSelected = selectedOutcome == outcome
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(if (isSelected) PrimaryColor else SurfaceVariant)
+                                    .clickable { selectedOutcome = outcome }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(outcome, color = if (isSelected) Color.White else OnSurfaceVariantColor, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                    Text("Meeting Notes", color = OnSurfaceVariantColor, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp, top = 8.dp))
                     OutlinedTextField(
                         value = notes,
                         onValueChange = { notes = it },
                         modifier = Modifier.fillMaxWidth().height(120.dp),
-                        placeholder = { Text("e.g. Met for coffee. Pain point: old software. Budget: $10k. Action: send demo.") }
+                        placeholder = { Text("e.g. Met for coffee. Discussed software automation...") }
                     )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        showDialog = false
-                        viewModel.logMeeting(contactId, notes) {
+                        val combinedNotes = "Outcome: $selectedOutcome. Notes: $notes"
+                        viewModel.logMeeting(contactId, combinedNotes) {
+                            showDialog = false
                             notes = ""
+                            context.startService(android.content.Intent(context, com.mitron.connect.services.MitronSyncService::class.java))
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
@@ -231,8 +254,10 @@ fun TimelineScreen(
                     )
                 }
                 
-                items(events) { event ->
-                    TimelineRow(event, onClick = { if (event.isMeeting) onOpenMeetingSummary(contactId) })
+                items(events, key = { it.id }) { event ->
+                    androidx.compose.animation.AnimatedVisibility(visible = true) {
+                        TimelineRow(event, onClick = { if (event.isMeeting) onOpenMeetingSummary(contactId) })
+                    }
                 }
                 
                 item {
@@ -319,30 +344,17 @@ private fun TimelineRow(event: TimelineEvent, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(16.dp))
         
         // Content Card
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .shadow(4.dp, RoundedCornerShape(12.dp), spotColor = PrimaryContainer.copy(alpha = 0.05f))
-                .clip(RoundedCornerShape(12.dp))
-                .background(SurfaceContainerLow)
-                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+        com.mitron.connect.ui.components.GlassCard(
+            modifier = Modifier.weight(1f)
         ) {
             // Gradient strip for meetings/coffee
-            if (event.isMeeting || event.icon == TimelineIcon.COFFEE) {
+            if (event.isMeeting || event.icon == TimelineIcon.COFFEE || event.icon == TimelineIcon.CALENDAR) {
                 Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(4.dp)
-                            .fillMaxHeight()
-                            .background(Brush.verticalGradient(listOf(SecondaryContainer, PrimaryColor)))
-                    )
-                }
+                    modifier = Modifier.fillMaxWidth().height(4.dp).background(Brush.horizontalGradient(listOf(SecondaryContainer, PrimaryColor)))
+                )
             }
             
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(top = if (event.isMeeting || event.icon == TimelineIcon.COFFEE || event.icon == TimelineIcon.CALENDAR) 12.dp else 0.dp)) {
                 Text(event.label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = OnSurfaceColor)
                 if (event.subtitle != null) {
                     Spacer(modifier = Modifier.height(4.dp))

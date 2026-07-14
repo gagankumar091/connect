@@ -1,0 +1,74 @@
+app/src/main/java
+└── com
+    └── mitron
+        └── connect
+            ├── ConnectApplication.kt
+            ├── data
+            │   ├── local
+            │   │   ├── ChatDao.kt
+            │   │   └── MitronDatabase.kt
+            │   ├── model
+            │   │   ├── AppNotification.kt
+            │   │   ├── BriefingItem.kt
+            │   │   ├── ChatMessage.kt
+            │   │   ├── ChatPreview.kt
+            │   │   ├── Common.kt
+            │   │   ├── Company.kt
+            │   │   ├── Contact.kt
+            │   │   ├── Event.kt
+            │   │   ├── EventPerson.kt
+            │   │   ├── MeetingSummary.kt
+            │   │   └── TimelineEvent.kt
+            │   ├── RetrofitClient.kt
+            │   ├── SampleData.kt
+            │   ├── SessionManager.kt
+            │   └── VercelRepository.kt
+            ├── MainActivity.kt
+            ├── navigation
+            │   ├── ConnectNavGraph.kt
+            │   └── Destinations.kt
+            ├── services
+            │   ├── CallManager.kt
+            │   ├── MitronSyncService.kt
+            │   └── NotificationHelper.kt
+            └── ui
+                ├── components
+                │   ├── Avatar.kt
+                │   ├── Buttons.kt
+                │   ├── ConnectCard.kt
+                │   ├── ConnectComponents.kt
+                │   ├── ConnectTopBar.kt
+                │   ├── QrCode.kt
+                │   ├── Shimmer.kt
+                │   └── Tag.kt
+                ├── screens
+                │   ├── aiassistant
+                │   ├── briefing
+                │   ├── businesscard
+                │   ├── calls
+                │   ├── chats
+                │   ├── companies
+                │   ├── company
+                │   ├── events
+                │   ├── health
+                │   ├── home
+                │   ├── meetingsummary
+                │   ├── notifications
+                │   ├── people
+                │   ├── profile
+                │   ├── scanner
+                │   ├── score
+                │   ├── search
+                │   ├── timeline
+                │   └── welcome
+                └── theme
+                    ├── AccentColorMapping.kt
+                    ├── Color.kt
+                    ├── ConnectColorScheme.kt
+                    ├── Dimens.kt
+                    ├── Shape.kt
+                    ├── Theme.kt
+                    ├── Type.kt
+                    └── Typography.kt
+
+32 directories, 40 files

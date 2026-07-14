@@ -1,14 +1,13 @@
 {
   "builds": [
-    {
-      "src": "backend/index.js",
-      "use": "@vercel/node"
-    }
+    { "src": "backend/api/**/*.ts", "use": "@vercel/node" },
+    { "src": "backend/index.js", "use": "@vercel/node" }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "backend/index.js"
-    }
+    { "src": "/api/briefing", "dest": "backend/api/briefing.ts" },
+    { "src": "/api/sync", "dest": "backend/api/sync.ts" },
+    { "src": "/api/health-score", "dest": "backend/api/health-score.ts" },
+    { "src": "/api/ai/draft-followup", "dest": "backend/api/ai/draft-followup.ts" },
+    { "src": "/(.*)", "dest": "backend/index.js" }
   ]
 }

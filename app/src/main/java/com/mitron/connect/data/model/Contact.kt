@@ -4,7 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class RelationshipType { PROSPECT, CUSTOMER, CANDIDATE, GENERAL }
+
+@Serializable
 data class Contact(
+    @SerialName("relationship_type")
+    var relationshipType: RelationshipType = RelationshipType.GENERAL,
     var id: String = "",
     var initials: String = "",
     var name: String = "",

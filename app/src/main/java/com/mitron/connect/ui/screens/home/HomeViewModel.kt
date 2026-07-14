@@ -102,7 +102,7 @@ class HomeViewModel(private val repository: VercelRepository = VercelRepository(
             if (!isBackgroundSync) _isLoading.value = true
             try {
                 kotlinx.coroutines.coroutineScope {
-                    val c = async { repository.getContacts(userLat, userLng) }
+                    val c = async { repository.getContacts() }
                     val ch = async { repository.getChats() }
                     val cp = async { repository.getCompanies() }
                     val ev = async { repository.getEvents(userLat, userLng) }

@@ -221,11 +221,11 @@ private fun DailyBriefingCard(
     onViewChats: () -> Unit,
     onViewEvents: () -> Unit
 ) {
-    Card(
+    com.mitron.connect.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        
+        
+        
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -309,11 +309,11 @@ private fun BriefingRow(
 
 @Composable
 private fun HealthScoreCard(score: Int, onClick: () -> Unit) {
-    Card(
+    com.mitron.connect.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth().aspectRatio(1f).shadow(8.dp, RoundedCornerShape(24.dp)).clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        
+        
+        
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -348,11 +348,11 @@ private fun HealthScoreCard(score: Int, onClick: () -> Unit) {
 
 @Composable
 private fun QuickActionsCard(onCallClick: () -> Unit, onMessageClick: () -> Unit, onSearchClick: () -> Unit) {
-    Card(
+    com.mitron.connect.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth().aspectRatio(1f).shadow(8.dp, RoundedCornerShape(24.dp)),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        
+        
+        
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -400,11 +400,11 @@ private fun GrowNetworkCard(onNavigateToContacts: () -> Unit = {}) {
         label = "scale"
     )
 
-    Card(
+    com.mitron.connect.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        
+        
+        
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(24.dp),
@@ -432,7 +432,7 @@ private fun GrowNetworkCard(onNavigateToContacts: () -> Unit = {}) {
             Button(
                 onClick = onNavigateToContacts,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                
                 shape = RoundedCornerShape(14.dp)
             ) {
                 Text("Browse Contacts", fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = 0.5.sp)

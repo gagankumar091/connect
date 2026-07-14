@@ -121,7 +121,7 @@ fun HomeFeedContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
+                
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = Color(0xFFF3F4F6),
                     focusedContainerColor = Color(0xFFF3F4F6),
@@ -197,7 +197,7 @@ fun HomeFeedContent(
 @Composable
 fun FilterChipItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        
         color = if (isSelected) Color(0xFF2563EB) else Color(0xFFF3F4F6),
         modifier = Modifier
             .clickable(onClick = onClick)
@@ -347,19 +347,19 @@ fun ChatItem(chat: ChatPreview, onClick: () -> Unit, onOpenProfile: (String) -> 
 
 @Composable
 fun EventItem(event: Event, onClick: () -> Unit) {
-    Card(
+    com.mitron.connect.ui.components.GlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .shadow(2.dp, RoundedCornerShape(12.dp), spotColor = Color.Black.copy(alpha = 0.05f)),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFE4E1E7))
+        
+        
+        
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    
                     color = Color(0xFFF0F0FA),
                     modifier = Modifier.size(48.dp)
                 ) {

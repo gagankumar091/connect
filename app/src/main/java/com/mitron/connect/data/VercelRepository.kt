@@ -4,7 +4,7 @@ import com.mitron.connect.data.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class VercelRepository {
+class VercelRepository : com.mitron.connect.core.data.repository.ContactRepository {
     private val api = RetrofitClient.apiService
 
 
@@ -33,12 +33,21 @@ class VercelRepository {
     }
 
 
-    suspend fun getContacts(lat: Double? = null, lng: Double? = null): List<Contact> = withContext(Dispatchers.IO) {
+    override suspend fun getContacts(): List<Contact> = withContext(Dispatchers.IO) {
         try {
-            val allUsers = api.getUsers(lat, lng)
+            val allUsers = api.getUsers(null, null)
             val currentUserId = getCurrentUserId()
-            allUsers.filter { it.id != currentUserId }.map {
-                it.copy(initials = it.name.take(2).uppercase())
+            allUsers.filter { it.id != currentUserId }.map { contact ->
+                // PHASE 2: Relationship Health Algorithm (Mocked for API)
+                // Recency of email + Meeting frequency - Follow-up gaps
+                val meetingBonus = if (contact.mutualsCount > 0) contact.mutualsCount * 10 else 0
+                val followUpGap = contact.daysSinceContact
+                val calculatedScore = (80 + meetingBonus - (followUpGap * 2)).coerceIn(0, 100)
+                
+                contact.copy(
+                    initials = contact.name.take(2).uppercase(),
+                    score = calculatedScore
+                )
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -46,16 +55,28 @@ class VercelRepository {
         }
     }
 
-    suspend fun getContactById(id: String): Contact? = withContext(Dispatchers.IO) {
+    override suspend fun getContactById(id: String): Contact? = withContext(Dispatchers.IO) {
         try {
             // Use direct user profile endpoint — faster than fetching all users
             api.getUserProfile(id).let { contact ->
-                contact.copy(initials = contact.name.take(2).uppercase())
+                // PHASE 2: Relationship Health Algorithm
+                val meetingBonus = if (contact.mutualsCount > 0) contact.mutualsCount * 10 else 0
+                val followUpGap = contact.daysSinceContact
+                val calculatedScore = (80 + meetingBonus - (followUpGap * 2)).coerceIn(0, 100)
+
+                contact.copy(
+                    initials = contact.name.take(2).uppercase(),
+                    score = calculatedScore
+                )
             }
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
+    }
+
+    override suspend fun updateContactRelationshipScore(id: String, newScore: Int) {
+        // Implementation for API call to update score will go here
     }
 
     suspend fun getCompanies(): List<Company> = withContext(Dispatchers.IO) {

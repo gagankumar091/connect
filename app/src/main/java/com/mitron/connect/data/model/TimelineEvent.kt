@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import java.util.Date
 
 @Serializable
-enum class TimelineIcon { LOCATION, QR, FILE, COFFEE, SEND, CHECK }
+enum class TimelineIcon { LOCATION, QR, FILE, COFFEE, SEND, CHECK, EMAIL, CALENDAR, NOTE }
 
 @Serializable
 data class TimelineEvent(

@@ -1,4 +1,5 @@
 package com.mitron.connect.ui.screens.profile
+import androidx.compose.ui.graphics.graphicsLayer
 
 import android.content.Intent
 import android.provider.CalendarContract
@@ -32,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import com.mitron.connect.data.model.Contact
+import com.mitron.connect.data.model.RelationshipType
 import com.mitron.connect.ui.components.Avatar
 import com.mitron.connect.ui.theme.ConnectTheme
 import com.mitron.connect.ui.theme.tints
@@ -110,19 +112,25 @@ fun ProfileScreen(
             }
         }
 
+        val scrollState = rememberScrollState()
         // Main Content
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Profile Header Section
+            // Profile Header Section with Parallax
+            val scrollOffset = scrollState.value.toFloat()
             Box(
                 modifier = Modifier
                     .padding(bottom = 16.dp)
-                    .size(128.dp),
+                    .size(128.dp)
+                    .graphicsLayer {
+                        translationY = scrollOffset * 0.5f // Parallax effect
+                        alpha = 1f - (scrollOffset / 500f).coerceIn(0f, 1f) // Fade out
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 // Avatar
@@ -170,19 +178,118 @@ fun ProfileScreen(
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             
-            Text(
-                text = currentContact.title ?: "Professional",
-                fontSize = 16.sp,
-                color = OnSurfaceVariantColor,
-                modifier = Modifier.padding(top = 4.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
+                modifier = Modifier.padding(top = 8.dp)
             ) {
+                val badgeColor = when (currentContact.relationshipType) {
+                    RelationshipType.PROSPECT -> PrimaryColor
+                    RelationshipType.CUSTOMER -> Color(0xFF10B981) // Green
+                    RelationshipType.CANDIDATE -> Color(0xFFF59E0B) // Amber
+                    RelationshipType.GENERAL -> OnSurfaceVariantColor
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(badgeColor.copy(alpha = 0.1f))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = currentContact.relationshipType.name,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = badgeColor
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = currentContact.title ?: "Professional",
+                    fontSize = 16.sp,
+                    color = OnSurfaceVariantColor,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+
+            // Pulse Header (Health Score + Topics)
+            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val healthColor = when {
+                        currentContact.score >= 80 -> Color(0xFF10B981)
+                        currentContact.score >= 50 -> Color(0xFFF59E0B)
+                        else -> Color(0xFFEF4444)
+                    }
+                    Text("Relationship Health: ${currentContact.score}/100", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = healthColor)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("SaaS", "Enterprise", "B2B").forEach { tag ->
+                            Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(SurfaceContainerHigh).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                                Text(tag, fontSize = 12.sp, color = OnSurfaceVariantColor)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Segmented Control
+            var selectedSegment by remember { mutableStateOf(0) }
+            val segments = listOf("Timeline", "About", "Insights")
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).clip(RoundedCornerShape(12.dp)).background(SurfaceContainerHigh).padding(4.dp)
+            ) {
+                segments.forEachIndexed { index, segment ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (selectedSegment == index) Color.White else Color.Transparent)
+                            .clickable { selectedSegment = index }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(segment, fontSize = 14.sp, fontWeight = if (selectedSegment == index) FontWeight.Bold else FontWeight.Medium, color = if (selectedSegment == index) PrimaryColor else OnSurfaceVariantColor)
+                    }
+                }
+            }
+
+            if (selectedSegment == 0) {
+                // Show timeline insights or trigger navigation
+                Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Button(onClick = { onOpenTimeline(currentContact.id) }, colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)) {
+                        Text("View Full Timeline")
+                    }
+                }
+            } else if (selectedSegment == 2) {
+                // Insights Segment
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(GlassColor)
+                        .border(1.dp, GlassBorder, RoundedCornerShape(24.dp))
+                        .padding(20.dp)
+                ) {
+                    Column {
+                        Text("Actionable Insights", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = OnSurfaceColor, modifier = Modifier.padding(bottom = 12.dp))
+                        
+                        Text("Meeting Summaries & Next Steps will appear here.", color = OnSurfaceVariantColor, fontSize = 14.sp, modifier = Modifier.padding(bottom = 16.dp))
+                        
+                        Button(
+                            onClick = {
+                                // Invoke DraftHelper
+                                com.mitron.connect.services.DraftHelper.draftFollowUpEmail(context, currentContact.email ?: "", currentContact.name, emptyList())
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                        ) {
+                            Icon(Icons.Outlined.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Draft Follow-up")
+                        }
+                    }
+                }
+            } else if (selectedSegment == 1) {
                 Text(
                     text = currentContact.company ?: "Independent",
                     fontSize = 16.sp,
