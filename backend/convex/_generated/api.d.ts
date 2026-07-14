@@ -11,6 +11,7 @@
 import type * as ai from "../ai.js";
 import type * as auth from "../auth.js";
 import type * as briefing from "../briefing.js";
+import type * as chat from "../chat.js";
 import type * as health from "../health.js";
 import type * as timeline from "../timeline.js";
 
@@ -24,6 +25,7 @@ declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   auth: typeof auth;
   briefing: typeof briefing;
+  chat: typeof chat;
   health: typeof health;
   timeline: typeof timeline;
 }>;

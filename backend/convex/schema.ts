@@ -21,6 +21,22 @@ export default defineSchema({
     location: v.optional(v.string()),
   }),
 
+  chats: defineTable({
+    user_id: v.string(), // userId of one participant
+    contact_id: v.string(), // userId of the other participant
+    last_message: v.optional(v.string()),
+    updated_at: v.optional(v.string()),
+  }).index("by_user", ["user_id"]).index("by_contact", ["contact_id"]),
+
+  messages: defineTable({
+    chat_id: v.id("chats"),
+    sender_id: v.string(),
+    text: v.string(),
+    is_read: v.boolean(),
+    created_at: v.string(),
+    read_at: v.optional(v.string()),
+  }).index("by_chat", ["chat_id"]),
+
   contacts: defineTable({
     name: v.string(),
     company: v.string(),
